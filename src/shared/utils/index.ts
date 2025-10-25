@@ -5,3 +5,5 @@ export const formatDate = (date: Date): string => {
 export const getCurrentTimestamp = (): string => {
   return formatDate(new Date());
 };
+
+export * from './asyncHandler';
