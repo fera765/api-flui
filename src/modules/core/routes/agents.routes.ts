@@ -16,6 +16,7 @@ const agentController = new AgentController(agentService);
 // Export for testing purposes
 export const __testOnlyAgents__ = {
   clearRepository: () => agentRepository.clear(),
+  getRepository: () => agentRepository,
 };
 
 // Routes
