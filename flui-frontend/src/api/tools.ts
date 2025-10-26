@@ -6,15 +6,60 @@ export interface Tool {
   description?: string;
   inputSchema: object;
   outputSchema: object;
+  source?: 'system' | 'mcp' | 'agent';
+  mcpName?: string;
+  agentName?: string;
+}
+
+export interface MCPToolsGroup {
+  mcp: {
+    id: string;
+    name: string;
+    source: string;
+    sourceType: string;
+    description?: string;
+  };
+  tools: Tool[];
+  toolsCount: number;
+}
+
+export interface AgentToolsGroup {
+  agent: {
+    id: string;
+    name: string;
+    description?: string;
+    defaultModel?: string;
+  };
+  tools: Tool[];
+  toolsCount: number;
 }
 
 export interface AllToolsResponse {
-  tools: Tool[];
-  total: number;
-  sources: {
-    system: number;
-    mcp: number;
+  tools: {
+    system: Tool[];
+    mcps: MCPToolsGroup[];
+    agents: AgentToolsGroup[];
   };
+  summary: {
+    systemTools: number;
+    mcpTools: number;
+    agentTools: number;
+    totalTools: number;
+    mcpsCount: number;
+    agentsCount: number;
+  };
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+  filters: {
+    category: string;
+    mcpId: string | null;
+    agentId: string | null;
+  };
+  toolsPaginated: Tool[];
 }
 
 export interface SearchToolsResponse {
@@ -24,10 +69,16 @@ export interface SearchToolsResponse {
 }
 
 /**
- * Get all tools from all sources (SystemTools + MCPs)
+ * Get all tools from all sources (SystemTools + MCPs + Agents)
  */
-export const getAllTools = async (): Promise<AllToolsResponse> => {
-  const response = await apiClient.get('/api/all-tools');
+export const getAllTools = async (params?: {
+  page?: number;
+  pageSize?: number;
+  category?: 'system' | 'mcp' | 'agent' | 'all';
+  mcpId?: string;
+  agentId?: string;
+}): Promise<AllToolsResponse> => {
+  const response = await apiClient.get('/api/all-tools', { params });
   return response.data;
 };
 
