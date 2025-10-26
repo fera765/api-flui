@@ -69,12 +69,12 @@ export class AutomationImport {
       throw new Error('Automation name is missing');
     }
 
-    if (!data.automation.trigger) {
-      throw new Error('Automation trigger is missing');
-    }
+    // Accept EITHER trigger/actions OR nodes/links format
+    const hasOldFormat = data.automation.trigger && Array.isArray(data.automation.actions);
+    const hasNewFormat = Array.isArray((data.automation as any).nodes) && Array.isArray((data.automation as any).links);
 
-    if (!Array.isArray(data.automation.actions)) {
-      throw new Error('Automation actions must be an array');
+    if (!hasOldFormat && !hasNewFormat) {
+      throw new Error('Automation must have either trigger/actions or nodes/links');
     }
   }
 
@@ -96,6 +96,7 @@ export class AutomationImport {
     };
 
     try {
+      // Already validated in constructor, so just return success
       // Validate version compatibility
       if (!this.isVersionCompatible(this.exportData.version)) {
         warnings.push(`Export version ${this.exportData.version} may not be fully compatible`);
