@@ -8,6 +8,7 @@ import { executionRoutes } from '@modules/core/routes/execution.routes';
 import { conditionRoutes } from '@modules/core/routes/condition.routes';
 import { importExportRoutes } from '@modules/core/routes/import-export.routes';
 import { toolsRoutes as torRoutes } from '@modules/tools/routes';
+import { chatRoutes } from '@modules/chat/routes';
 
 const routes = Router();
 
@@ -22,5 +23,6 @@ routes.use('/api/automations/export', importExportRoutes); // Must come before /
 routes.use('/api/automations/import', importExportRoutes); // Must come before /api/automations to match import routes
 routes.use('/api/automations', automationsRoutes);
 routes.use('/api/execution', executionRoutes);
+routes.use('/api/chats', chatRoutes); // Chat contextual integration - FEATURE 10
 
 export { routes };
