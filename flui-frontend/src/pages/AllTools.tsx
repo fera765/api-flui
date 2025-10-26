@@ -329,7 +329,7 @@ const ToolCard = ({ tool }: any) => (
     <CardContent className="space-y-3">
       <div>
         <h4 className="text-xs font-semibold mb-1">Input Schema:</h4>
-        <pre className="text-xs bg-muted p-2 rounded overflow-x-auto max-h-32">
+        <pre className="text-xs bg-muted p-2 rounded overflow-x-auto overflow-y-auto max-h-32 break-all whitespace-pre-wrap">
           {JSON.stringify(tool.inputSchema, null, 2)}
         </pre>
       </div>
