@@ -1,8 +1,13 @@
 import { Request, Response } from 'express';
 import { MCPService } from '../services/MCPService';
+import { NPMMetadataService } from '../services/NPMMetadataService';
 
 export class MCPController {
-  constructor(private readonly mcpService: MCPService) {}
+  private npmMetadataService: NPMMetadataService;
+
+  constructor(private readonly mcpService: MCPService) {
+    this.npmMetadataService = new NPMMetadataService();
+  }
 
   public async import(request: Request, response: Response): Promise<Response> {
     const { name, source, description, env } = request.body;
@@ -32,5 +37,42 @@ export class MCPController {
     const { id } = request.params;
     await this.mcpService.deleteMCP(id);
     return response.status(204).send();
+  }
+
+  public async fetchMetadata(request: Request, response: Response): Promise<Response> {
+    const { source, sourceType } = request.query;
+
+    if (!source || typeof source !== 'string') {
+      return response.status(400).json({ error: 'Source parameter is required' });
+    }
+
+    // Only support NPM packages for now
+    if (sourceType !== 'npx') {
+      return response.json({
+        suggestedName: '',
+        suggestedDescription: '',
+        metadata: null
+      });
+    }
+
+    try {
+      const suggestions = await this.npmMetadataService.suggestMCPDetails(source);
+      const metadata = await this.npmMetadataService.fetchMetadata(source);
+
+      return response.json({
+        suggestedName: suggestions.suggestedName,
+        suggestedDescription: suggestions.suggestedDescription,
+        metadata: metadata,
+        exists: metadata !== null
+      });
+    } catch (error) {
+      console.error('Error fetching metadata:', error);
+      return response.status(500).json({ 
+        error: 'Failed to fetch metadata',
+        suggestedName: '',
+        suggestedDescription: '',
+        metadata: null
+      });
+    }
   }
 }

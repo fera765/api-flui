@@ -60,3 +60,34 @@ export const getMCPTools = async (id: string): Promise<Tool[]> => {
 export const deleteMCP = async (id: string): Promise<void> => {
   await apiClient.delete(`/api/mcps/${id}`);
 };
+
+export interface MCPMetadata {
+  suggestedName: string;
+  suggestedDescription: string;
+  metadata: {
+    name: string;
+    description?: string;
+    version?: string;
+    keywords?: string[];
+    repository?: {
+      type: string;
+      url: string;
+    };
+    bin?: Record<string, string> | string;
+    homepage?: string;
+  } | null;
+  exists: boolean;
+}
+
+/**
+ * Fetch metadata for an MCP package
+ */
+export const fetchMCPMetadata = async (
+  source: string,
+  sourceType: 'npx' | 'sse' = 'npx'
+): Promise<MCPMetadata> => {
+  const response = await apiClient.get('/api/mcps/metadata', {
+    params: { source, sourceType },
+  });
+  return response.data;
+};

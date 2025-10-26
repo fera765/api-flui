@@ -19,6 +19,7 @@ export const __testOnlyMCPs__ = {
 
 // Routes
 mcpsRoutes.get('/', asyncHandler((req, res) => mcpController.getAll(req, res)));
+mcpsRoutes.get('/metadata', asyncHandler((req, res) => mcpController.fetchMetadata(req, res)));
 mcpsRoutes.post('/import', asyncHandler((req, res) => mcpController.import(req, res)));
 mcpsRoutes.get('/:id/tools', asyncHandler((req, res) => mcpController.getTools(req, res)));
 mcpsRoutes.delete('/:id', asyncHandler((req, res) => mcpController.delete(req, res)));
