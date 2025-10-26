@@ -138,14 +138,28 @@ export class RealMCPSandbox implements ISandbox {
   }
 
   private async connectWithArgs(_packageName: string, args: string[], timeout: number = 30000): Promise<void> {
-    const envVars = this.env ? { ...this.env } : undefined;
+    // Merge custom env with current process env to preserve PATH and other critical vars
+    const processEnv: Record<string, string> = {};
+    for (const [key, value] of Object.entries(process.env)) {
+      if (value !== undefined) {
+        processEnv[key] = value;
+      }
+    }
+    
+    const envVars = {
+      ...processEnv,  // Include current process environment
+      ...(this.env || {}),  // Override with custom env if provided
+    };
     
     console.log(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     console.log(`[MCP-DEBUG] 🔧 connectWithArgs() - Starting connection process`);
     console.log(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     console.log(`[MCP-DEBUG] 📦 Command: npx ${args.join(' ')}`);
     console.log(`[MCP-DEBUG] ⏱️  Timeout: ${timeout}ms (${timeout/1000}s)`);
-    console.log(`[MCP-DEBUG] 🌍 Environment vars:`, envVars ? Object.keys(envVars) : 'none');
+    console.log(`[MCP-DEBUG] 🌍 Environment vars count: ${Object.keys(envVars).length}`);
+    console.log(`[MCP-DEBUG] 🌍 PATH: ${envVars.PATH ? 'present' : 'MISSING'}`);
+    console.log(`[MCP-DEBUG] 🌍 HOME: ${envVars.HOME ? 'present' : 'MISSING'}`);
+    console.log(`[MCP-DEBUG] 🌍 NODE_PATH: ${envVars.NODE_PATH || 'not set'}`);
     
     console.log(`[MCP-DEBUG] Step 1/3: Creating StdioClientTransport...`);
     
