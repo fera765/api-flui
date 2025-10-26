@@ -37,7 +37,7 @@ export class ToolImportService {
    * Importa uma tool a partir de um arquivo ZIP
    */
   async import(zipPath: string, options: ImportOptions = {}): Promise<ImportResult> {
-    const errors: string[] = [];
+    // const errors: string[] = [];
     const warnings: string[] = [];
 
     try {
@@ -174,8 +174,8 @@ export class ToolImportService {
       sandboxPath,
       manifest.entry,
       {},
-      manifest.capabilities,
-      5000 // 5s timeout para healthcheck
+      manifest.capabilities
+      // 5000 // 5s timeout para healthcheck
     );
 
     if (!result.success) {

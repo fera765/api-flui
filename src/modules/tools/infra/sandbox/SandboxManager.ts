@@ -39,8 +39,8 @@ export interface Sandbox {
 
 export class SandboxManager {
   private sandboxes = new Map<string, Sandbox>();
-  private static DEFAULT_TIMEOUT = 30000; // 30s
-  private static DEFAULT_MEMORY_LIMIT = 512 * 1024 * 1024; // 512MB
+  // private static DEFAULT_TIMEOUT = 30000; // 30s
+  // private static DEFAULT_MEMORY_LIMIT = 512 * 1024 * 1024; // 512MB
 
   /**
    * Cria um sandbox para uma tool
@@ -77,7 +77,7 @@ export class SandboxManager {
     }
 
     const startTime = Date.now();
-    const timeout = options.timeout || SandboxManager.DEFAULT_TIMEOUT;
+    // const timeout = options.timeout || SandboxManager.DEFAULT_TIMEOUT;
 
     try {
       // Mock execution - em produção, usar Worker Thread real
@@ -115,11 +115,11 @@ export class SandboxManager {
     toolPath: string,
     entryPoint: string,
     input: any,
-    capabilities?: string[],
-    timeout?: number
+    capabilities?: string[]
+    // timeout?: number
   ): Promise<SandboxExecutionResult> {
     const startTime = Date.now();
-    const execTimeout = timeout || SandboxManager.DEFAULT_TIMEOUT;
+    // const execTimeout = timeout || SandboxManager.DEFAULT_TIMEOUT;
 
     try {
       // Validar path

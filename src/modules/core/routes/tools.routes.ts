@@ -1,13 +1,13 @@
 import { Router } from 'express';
 import { SystemToolController } from '../controllers/SystemToolController';
 import { SystemToolService } from '../services/SystemToolService';
-import { SystemToolRepositoryInMemory } from '../repositories/SystemToolRepositoryInMemory';
 import { asyncHandler } from '@shared/utils/asyncHandler';
+import { systemToolRepository } from '@shared/repositories/singletons';
 
 const toolsRoutes = Router();
 
-// Singleton repository instance
-const toolRepository = new SystemToolRepositoryInMemory();
+// Use shared singleton instance
+const toolRepository = systemToolRepository;
 
 // Services and Controllers
 const toolService = new SystemToolService(toolRepository);

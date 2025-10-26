@@ -1,3 +1,4 @@
+import 'tsconfig-paths/register';
 import 'dotenv/config';
 import { app } from '@infra/http/app';
 import { serverConfig } from '@config/server';
