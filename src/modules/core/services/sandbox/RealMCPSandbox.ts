@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { execSync } from 'child_process';
 import { Tool } from '../../domain/Tool';
 import { ISandbox, SandboxExecutionResult } from './ISandbox';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -34,9 +35,13 @@ export class RealMCPSandbox implements ISandbox {
         throw new Error('Package name is required');
       }
 
-      // Determine the executable name
-      // Most MCP packages have a bin name different from package name
-      const executableName = this.getExecutableName(packageName);
+      // Discover the executable name from NPM
+      console.log(`[MCP] Discovering executable for package: ${packageName}`);
+      const executableName = await this.discoverExecutableName(packageName);
+      
+      if (!executableName) {
+        throw new Error(`Could not determine executable name for package: ${packageName}`);
+      }
       
       // Create MCP client transport (will spawn process automatically)
       const envVars = this.env ? { ...this.env } : undefined;
@@ -88,24 +93,60 @@ export class RealMCPSandbox implements ISandbox {
   }
 
   /**
-   * Determine the executable name from package name
-   * Most MCP packages follow patterns like:
-   * - @modelcontextprotocol/server-memory -> mcp-server-memory
-   * - @org/package-name -> package-name (fallback)
+   * Discover the executable name from NPM registry
+   * Queries npm view to get the bin field
    */
-  private getExecutableName(packageName: string): string {
-    // Remove @ and organization prefix
+  private async discoverExecutableName(packageName: string): Promise<string | null> {
+    try {
+      console.log(`[MCP] Querying NPM for bin name: npm view ${packageName} bin`);
+      
+      // Query NPM for bin field
+      const result = execSync(`npm view ${packageName} bin --json`, {
+        encoding: 'utf-8',
+        timeout: 10000,
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+      const binData = JSON.parse(result.trim());
+      
+      // bin can be a string or an object
+      if (typeof binData === 'string') {
+        // Single bin
+        return packageName.split('/').pop() || null;
+      } else if (typeof binData === 'object' && binData !== null) {
+        // Multiple bins - get first key
+        const binNames = Object.keys(binData);
+        if (binNames.length > 0) {
+          const binName = binNames[0];
+          console.log(`[MCP] Found bin name: ${binName}`);
+          return binName;
+        }
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('[MCP] Error querying NPM for bin:', error);
+      
+      // Fallback: try common patterns
+      return this.getFallbackExecutableName(packageName);
+    }
+  }
+
+  /**
+   * Fallback executable name detection
+   */
+  private getFallbackExecutableName(packageName: string): string {
     let name = packageName;
     
     // Handle scoped packages (@org/name)
     if (name.startsWith('@')) {
       const parts = name.split('/');
       if (parts.length === 2) {
-        name = parts[1]; // Get package name without @org/
+        name = parts[1];
       }
     }
     
-    // Most official MCP servers follow the pattern: server-xyz -> mcp-server-xyz
+    // Most official MCP servers follow: server-xyz -> mcp-server-xyz
     if (name.startsWith('server-')) {
       return `mcp-${name}`;
     }
