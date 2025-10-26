@@ -64,6 +64,7 @@ const Agents = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [configuredModel, setConfiguredModel] = useState<string>('');
   const [currentTab, setCurrentTab] = useState('info');
+  const [availableModels, setAvailableModels] = useState<Model[]>([]);
 
   // Edit mode
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
