@@ -44,7 +44,16 @@ import {
   CreateAgentPayload,
   Tool as AgentTool,
 } from '@/api/agents';
-import { getSystemConfig } from '@/api/config';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { getSystemConfig, getModels, Model } from '@/api/config';
 import { getAllTools, Tool, MCPTools, AgentTools } from '@/api/tools';
 import { useToast } from '@/hooks/use-toast';
 
