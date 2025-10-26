@@ -7,6 +7,7 @@ import { automationsRoutes } from '@modules/core/routes/automations.routes';
 import { executionRoutes } from '@modules/core/routes/execution.routes';
 import { conditionRoutes } from '@modules/core/routes/condition.routes';
 import { importExportRoutes } from '@modules/core/routes/import-export.routes';
+import { allToolsRoutes } from '@modules/core/routes/all-tools.routes';
 import { toolsRoutes as torRoutes } from '@modules/tools/routes';
 import { chatRoutes } from '@modules/chat/routes';
 
@@ -15,6 +16,7 @@ const routes = Router();
 routes.use('/', coreRoutes);
 routes.use('/api/agents', agentsRoutes);
 routes.use('/api/mcps', mcpsRoutes);
+routes.use('/api/all-tools', allToolsRoutes); // All tools from System + MCPs
 routes.use('/api/tools/condition', conditionRoutes); // Condition tools (specific path first)
 routes.use('/api/tor', torRoutes); // TOR - Tool Onboarding Registry (moved to /api/tor)
 routes.use('/api/tools', toolsRoutes); // System tools (legacy)

@@ -3,15 +3,24 @@ import { AutomationController } from '../controllers/AutomationController';
 import { AutomationService } from '../services/AutomationService';
 import { AutomationExecutor } from '../services/automation/AutomationExecutor';
 import { asyncHandler } from '@shared/utils/asyncHandler';
-import { automationRepository, systemToolRepository, agentRepository } from '@shared/repositories/singletons';
+import { 
+  automationRepository, 
+  systemToolRepository, 
+  agentRepository,
+  mcpRepository 
+} from '@shared/repositories/singletons';
 
 const automationsRoutes = Router();
 
 // Use shared singleton instances
 const toolRepository = systemToolRepository;
 
-// Services and Controllers
-const automationExecutor = new AutomationExecutor(toolRepository, agentRepository);
+// Services and Controllers - Now with MCP support
+const automationExecutor = new AutomationExecutor(
+  toolRepository, 
+  agentRepository,
+  mcpRepository
+);
 const automationService = new AutomationService(automationRepository, automationExecutor);
 const automationController = new AutomationController(automationService);
 
@@ -20,9 +29,11 @@ export const __testOnlyAutomations__ = {
   clearRepository: () => automationRepository.clear(),
   clearToolRepository: () => toolRepository.clear(),
   clearAgentRepository: () => agentRepository.clear(),
+  clearMCPRepository: () => mcpRepository.clear(),
   getRepository: () => automationRepository,
   getToolRepository: () => toolRepository,
   getAgentRepository: () => agentRepository,
+  getMCPRepository: () => mcpRepository,
   getExecutor: () => automationExecutor,
 };
 

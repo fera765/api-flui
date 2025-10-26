@@ -132,6 +132,12 @@ const MCPs = () => {
     try {
       setImporting(true);
       
+      // Show progress toast
+      toast({
+        title: 'Importando MCP...',
+        description: 'Conectando ao servidor MCP e extraindo tools. Isso pode levar alguns segundos.',
+      });
+      
       const dataToSend: CreateMCPRequest = {
         name: formData.name.trim(),
         source: formData.source.trim(),
@@ -142,8 +148,8 @@ const MCPs = () => {
       const result = await importMCP(dataToSend);
       
       toast({
-        title: 'MCP importado com sucesso',
-        description: `${result.toolsExtracted} tools extraídas`,
+        title: 'MCP importado com sucesso! ✓',
+        description: `${result.toolsExtracted} tool${result.toolsExtracted !== 1 ? 's' : ''} extraída${result.toolsExtracted !== 1 ? 's' : ''} do MCP`,
       });
       
       setIsAddModalOpen(false);
@@ -151,9 +157,10 @@ const MCPs = () => {
       await loadMCPs();
     } catch (error: any) {
       console.error('Error importing MCP:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Erro desconhecido';
       toast({
         title: 'Erro ao importar MCP',
-        description: error.response?.data?.message || error.message,
+        description: errorMsg,
         variant: 'destructive',
       });
     } finally {
@@ -305,8 +312,16 @@ const MCPs = () => {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Pode ser um pacote NPM ou URL
+                    NPM: @org/package ou URL: https://mcp-server.com
                   </p>
+                  {importing && (
+                    <Alert className="border-blue-500/50 bg-blue-500/10">
+                      <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                      <AlertDescription className="text-blue-600">
+                        Instalando e conectando ao MCP... Aguarde (primeira vez pode demorar 30-60s)
+                      </AlertDescription>
+                    </Alert>
+                  )}
                 </div>
 
                 {/* Description */}

@@ -2,7 +2,9 @@ import { Automation, Node, NodeType, AutomationStatus } from '../../domain/Autom
 import { ISystemToolRepository } from '../../repositories/ISystemToolRepository';
 import { IAgentRepository } from '../../repositories/IAgentRepository';
 import { IConditionToolRepository } from '../../repositories/IConditionToolRepository';
+import { IMCPRepository } from '../../repositories/IMCPRepository';
 import { ConditionNodeExecutor } from './ConditionNodeExecutor';
+import { ToolResolver } from '../ToolResolver';
 import { AppError } from '@shared/errors';
 
 export interface ExecutionContext {
@@ -32,15 +34,20 @@ export interface IAutomationExecutor {
 export class AutomationExecutor implements IAutomationExecutor {
   private listeners: NodeExecutionListener[] = [];
   private conditionExecutor?: ConditionNodeExecutor;
+  private toolResolver: ToolResolver;
 
   constructor(
     private readonly toolRepository: ISystemToolRepository,
     private readonly agentRepository: IAgentRepository,
+    mcpRepository: IMCPRepository,
     conditionToolRepository?: IConditionToolRepository
   ) {
     if (conditionToolRepository) {
       this.conditionExecutor = new ConditionNodeExecutor(conditionToolRepository);
     }
+    
+    // Create ToolResolver to find tools from any source
+    this.toolResolver = new ToolResolver(toolRepository, mcpRepository);
   }
 
   public addListener(listener: NodeExecutionListener): void {
@@ -174,7 +181,8 @@ export class AutomationExecutor implements IAutomationExecutor {
     node: Node,
     input: Record<string, unknown>
   ): Promise<Record<string, unknown>> {
-    const tool = await this.toolRepository.findById(node.getReferenceId());
+    // Use ToolResolver to find tool from any source (SystemTools or MCPs)
+    const tool = await this.toolResolver.findToolById(node.getReferenceId());
 
     if (!tool) {
       throw new AppError(`Tool not found: ${node.getReferenceId()}`, 404);
@@ -194,13 +202,19 @@ export class AutomationExecutor implements IAutomationExecutor {
       throw new AppError(`Agent not found: ${node.getReferenceId()}`, 404);
     }
 
-    // For now, return agent info with input as a placeholder for actual agent execution
-    // In a real implementation, this would call the agent's LLM and execute tools
+    // Get agent's tools (can be from SystemTools or MCPs)
+    const agentTools = agent.getTools();
+    const availableToolNames = agentTools.map(t => t.getName());
+
+    // Agent now has access to all tools (System + MCP tools)
+    // In production, this would integrate with LLM to intelligently use these tools
     return {
       agentId: agent.getId(),
       agentName: agent.getName(),
+      availableTools: availableToolNames,
+      toolsCount: agentTools.length,
       input,
-      response: 'Agent execution placeholder - would integrate with LLM here',
+      response: `Agent ${agent.getName()} with ${agentTools.length} tool(s) available: ${availableToolNames.join(', ')}`,
     };
   }
 

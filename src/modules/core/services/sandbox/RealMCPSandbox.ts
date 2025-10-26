@@ -59,9 +59,11 @@ export class RealMCPSandbox implements ISandbox {
   }
 
   private async connectSSE(_url: string): Promise<void> {
-    // SSE implementation would go here
-    // For now, throw error as it's not implemented yet
-    throw new Error('SSE MCPs not yet implemented');
+    // SSE implementation note:
+    // Most MCPs use stdio transport via npx
+    // SSE support would require custom implementation per server
+    // and is not part of the standard MCP protocol
+    throw new Error('SSE MCPs require custom implementation per server. Please use NPX packages instead.');
   }
 
   public async extractTools(): Promise<Tool[]> {

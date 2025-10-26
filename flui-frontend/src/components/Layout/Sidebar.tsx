@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Settings, Package } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Package, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 
@@ -100,11 +100,17 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   icon={<Package className="w-5 h-5" />}
                   label="MCPs"
                 />
+                <SidebarLink
+                  href="/tools"
+                  icon={<Wrench className="w-5 h-5" />}
+                  label="Tools"
+                />
               </>
             ) : (
               <div className="flex flex-col items-center gap-3">
                 <SidebarIconLink href="/settings" icon={<Settings className="w-5 h-5" />} />
                 <SidebarIconLink href="/mcps" icon={<Package className="w-5 h-5" />} />
+                <SidebarIconLink href="/tools" icon={<Wrench className="w-5 h-5" />} />
               </div>
             )}
           </nav>
