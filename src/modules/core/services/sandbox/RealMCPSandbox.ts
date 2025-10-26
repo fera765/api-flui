@@ -38,10 +38,12 @@ export class RealMCPSandbox implements ISandbox {
     
     // Try multiple connection strategies for maximum compatibility
     const strategies = [
-      // Strategy 1: Direct npx execution (most compatible)
-      { name: 'direct', args: ['-y', packageName] },
+      // Strategy 1: Direct npx execution (most compatible, longer timeout)
+      { name: 'direct', args: ['-y', packageName], timeout: 45000 },
       // Strategy 2: With explicit executable name discovery
-      { name: 'explicit', args: await this.getExplicitArgs(packageName) },
+      { name: 'explicit', args: await this.getExplicitArgs(packageName), timeout: 30000 },
+      // Strategy 3: Try with .js extension if available
+      { name: 'explicit-js', args: await this.getExplicitArgsWithJS(packageName), timeout: 30000 },
     ];
 
     let lastError: Error | null = null;
@@ -50,15 +52,16 @@ export class RealMCPSandbox implements ISandbox {
       if (!strategy.args) continue; // Skip if args couldn't be determined
       
       try {
-        console.log(`[MCP] Trying strategy: ${strategy.name}`);
+        console.log(`[MCP] Trying strategy: ${strategy.name} (timeout: ${strategy.timeout}ms)`);
         console.log(`[MCP] Command: npx ${strategy.args.join(' ')}`);
         
-        await this.connectWithArgs(packageName, strategy.args);
-        console.log(`[MCP] Successfully connected using strategy: ${strategy.name}`);
+        await this.connectWithArgs(packageName, strategy.args, strategy.timeout);
+        console.log(`[MCP] ✅ Successfully connected using strategy: ${strategy.name}`);
         return; // Success!
         
       } catch (error) {
-        console.log(`[MCP] Strategy ${strategy.name} failed:`, error instanceof Error ? error.message : 'Unknown error');
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.log(`[MCP] ❌ Strategy ${strategy.name} failed: ${errorMsg}`);
         lastError = error instanceof Error ? error : new Error('Unknown error');
         
         // Clean up failed attempt
@@ -70,11 +73,14 @@ export class RealMCPSandbox implements ISandbox {
           try { await this.transport.close(); } catch {}
           this.transport = undefined;
         }
+        
+        // Small delay between attempts
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
     // All strategies failed
-    console.error('[MCP] All connection strategies failed');
+    console.error('[MCP] ❌ All connection strategies failed');
     throw new Error(
       `Failed to connect to MCP package "${packageName}". ` +
       `Please verify: 1) Package name is correct, ` +
@@ -97,7 +103,35 @@ export class RealMCPSandbox implements ISandbox {
     return null;
   }
 
-  private async connectWithArgs(_packageName: string, args: string[]): Promise<void> {
+  private async getExplicitArgsWithJS(packageName: string): Promise<string[] | null> {
+    try {
+      const result = execSync(`npm view ${packageName} bin --json 2>/dev/null || echo "{}"`, {
+        encoding: 'utf-8',
+        timeout: 5000,
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+      const binData = JSON.parse(result.trim() || '{}');
+      
+      if (typeof binData === 'object' && binData !== null) {
+        const binNames = Object.keys(binData);
+        if (binNames.length > 0) {
+          const binName = binNames[0];
+          const binPath = binData[binName];
+          
+          // Try with .js extension if the bin path includes it
+          if (binPath && typeof binPath === 'string' && binPath.endsWith('.js')) {
+            return ['-y', `--package=${packageName}`, binName];
+          }
+        }
+      }
+    } catch (error) {
+      // Silently skip
+    }
+    return null;
+  }
+
+  private async connectWithArgs(_packageName: string, args: string[], timeout: number = 30000): Promise<void> {
     const envVars = this.env ? { ...this.env } : undefined;
     
     this.transport = new StdioClientTransport({
@@ -116,11 +150,11 @@ export class RealMCPSandbox implements ISandbox {
       }
     );
 
-    // Connect with timeout to fail fast
+    // Connect with configurable timeout
     await Promise.race([
       this.client.connect(this.transport),
       new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Connection timeout after 10s')), 10000)
+        setTimeout(() => reject(new Error(`Connection timeout after ${timeout/1000}s`)), timeout)
       )
     ]);
   }
