@@ -2,6 +2,7 @@ export enum NodeType {
   TRIGGER = 'trigger',
   AGENT = 'agent',
   TOOL = 'tool',
+  CONDITION = 'condition',
 }
 
 export enum AutomationStatus {

@@ -1,6 +1,8 @@
 import { Automation, Node, NodeType, AutomationStatus } from '../../domain/Automation';
 import { ISystemToolRepository } from '../../repositories/ISystemToolRepository';
 import { IAgentRepository } from '../../repositories/IAgentRepository';
+import { IConditionToolRepository } from '../../repositories/IConditionToolRepository';
+import { ConditionNodeExecutor } from './ConditionNodeExecutor';
 import { AppError } from '@shared/errors';
 
 export interface ExecutionContext {
@@ -14,6 +16,9 @@ export interface NodeExecutionResult {
   outputs: Record<string, unknown>;
   status: 'success' | 'error';
   error?: string;
+  conditionId?: string;
+  conditionName?: string;
+  linkedNodes?: string[];
 }
 
 export type NodeExecutionListener = (result: NodeExecutionResult) => void;
@@ -26,11 +31,17 @@ export interface IAutomationExecutor {
 
 export class AutomationExecutor implements IAutomationExecutor {
   private listeners: NodeExecutionListener[] = [];
+  private conditionExecutor?: ConditionNodeExecutor;
 
   constructor(
     private readonly toolRepository: ISystemToolRepository,
-    private readonly agentRepository: IAgentRepository
-  ) {}
+    private readonly agentRepository: IAgentRepository,
+    conditionToolRepository?: IConditionToolRepository
+  ) {
+    if (conditionToolRepository) {
+      this.conditionExecutor = new ConditionNodeExecutor(conditionToolRepository);
+    }
+  }
 
   public addListener(listener: NodeExecutionListener): void {
     this.listeners.push(listener);
@@ -110,6 +121,9 @@ export class AutomationExecutor implements IAutomationExecutor {
         case NodeType.AGENT:
           outputs = await this.executeAgentNode(node, nodeInput);
           break;
+        case NodeType.CONDITION:
+          await this.executeConditionNode(node, automation, context, nodeInput);
+          return; // Condition node handles its own routing
         default:
           throw new Error(`Unknown node type: ${node.getType()}`);
       }
@@ -188,6 +202,55 @@ export class AutomationExecutor implements IAutomationExecutor {
       input,
       response: 'Agent execution placeholder - would integrate with LLM here',
     };
+  }
+
+  private async executeConditionNode(
+    node: Node,
+    automation: Automation,
+    context: ExecutionContext,
+    input: Record<string, unknown>
+  ): Promise<void> {
+    if (!this.conditionExecutor) {
+      throw new AppError('ConditionToolRepository not configured', 500);
+    }
+
+    const result = await this.conditionExecutor.execute(node, input);
+
+    // Store outputs
+    node.setOutputs(result.outputs);
+    context.executedNodes.set(node.getId(), result.outputs);
+
+    // Notify listeners with condition info
+    this.notifyListeners({
+      nodeId: node.getId(),
+      outputs: result.outputs,
+      status: 'success',
+      conditionId: result.satisfiedCondition?.conditionId,
+      conditionName: result.satisfiedCondition?.conditionName,
+      linkedNodes: result.satisfiedCondition?.linkedNodes,
+    });
+
+    // Execute only the nodes linked to the satisfied condition
+    if (result.satisfiedCondition && result.satisfiedCondition.linkedNodes.length > 0) {
+      const linkedNodeExecutions = result.satisfiedCondition.linkedNodes.map(async nodeId => {
+        const targetNode = automation.getNodeById(nodeId);
+
+        if (!targetNode) {
+          console.warn(`Linked node not found: ${nodeId}`);
+          return;
+        }
+
+        // Check if node was already executed (avoid infinite loops)
+        if (context.executedNodes.has(targetNode.getId())) {
+          return;
+        }
+
+        // Pass the outputs from the condition evaluation
+        await this.executeNode(targetNode, automation, context, result.outputs);
+      });
+
+      await Promise.all(linkedNodeExecutions);
+    }
   }
 
   private async executeConnectedNodes(

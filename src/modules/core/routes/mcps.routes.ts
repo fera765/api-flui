@@ -17,6 +17,7 @@ const mcpController = new MCPController(mcpService);
 export const __testOnlyMCPs__ = {
   clearRepository: () => mcpRepository.clear(),
   cleanupSandboxes: async () => await mcpService.cleanup(),
+  getRepository: () => mcpRepository,
 };
 
 // Routes
