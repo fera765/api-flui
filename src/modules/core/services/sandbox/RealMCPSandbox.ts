@@ -29,67 +29,136 @@ export class RealMCPSandbox implements ISandbox {
   }
 
   private async connectNPX(packageName: string): Promise<void> {
-    try {
-      // Validate package name format
-      if (!packageName || packageName.trim() === '') {
-        throw new Error('Package name is required');
-      }
-
-      // Discover the executable name from NPM
-      console.log(`[MCP] Discovering executable for package: ${packageName}`);
-      const executableName = await this.discoverExecutableName(packageName);
-      
-      if (!executableName) {
-        throw new Error(`Could not determine executable name for package: ${packageName}`);
-      }
-      
-      // Create MCP client transport (will spawn process automatically)
-      const envVars = this.env ? { ...this.env } : undefined;
-      
-      console.log(`[MCP] Connecting to NPX package: ${packageName}`);
-      console.log(`[MCP] Executable: ${executableName}`);
-      console.log(`[MCP] Using command: npx -y --package=${packageName} ${executableName}`);
-      
-      this.transport = new StdioClientTransport({
-        command: 'npx',
-        args: ['-y', `--package=${packageName}`, executableName],
-        env: envVars,
-      });
-
-      // Create MCP client
-      this.client = new Client(
-        {
-          name: 'flui-automation',
-          version: '1.0.0',
-        },
-        {
-          capabilities: {},
-        }
-      );
-
-      // Connect client to transport
-      await this.client.connect(this.transport);
-      
-      console.log(`[MCP] Successfully connected to ${packageName}`);
-
-    } catch (error) {
-      console.error('[MCP] Error connecting to NPX MCP:', error);
-      
-      // Provide helpful error message
-      let errorMsg = error instanceof Error ? error.message : 'Unknown error';
-      
-      if (errorMsg.includes('not found') || errorMsg.includes('Connection closed')) {
-        throw new Error(
-          `Failed to connect to MCP package "${packageName}". ` +
-          `Please verify: 1) Package name is correct, ` +
-          `2) Package exists on NPM and has MCP support, ` +
-          `3) You have internet connection. ` +
-          `Tested packages: @modelcontextprotocol/server-filesystem, @modelcontextprotocol/server-memory`
-        );
-      }
-      
-      throw new Error(`Failed to load MCP from NPX: ${errorMsg}`);
+    // Validate package name format
+    if (!packageName || packageName.trim() === '') {
+      throw new Error('Package name is required');
     }
+    
+    // Try multiple connection strategies for maximum compatibility
+    const strategies = [
+      // Strategy 1: Direct npx execution (most compatible, 2 minutes timeout)
+      { name: 'direct', args: ['-y', packageName], timeout: 120000 },
+      // Strategy 2: With explicit executable name discovery
+      { name: 'explicit', args: await this.getExplicitArgs(packageName), timeout: 120000 },
+      // Strategy 3: Try with .js extension if available
+      { name: 'explicit-js', args: await this.getExplicitArgsWithJS(packageName), timeout: 120000 },
+    ];
+
+    let lastError: Error | null = null;
+
+    for (const strategy of strategies) {
+      if (!strategy.args) continue; // Skip if args couldn't be determined
+      
+      try {
+        await this.connectWithArgs(packageName, strategy.args, strategy.timeout);
+        return; // Success!
+        
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        
+        // Clean up failed attempt
+        if (this.client) {
+          try { await this.client.close(); } catch {}
+          this.client = undefined;
+        }
+        if (this.transport) {
+          try { await this.transport.close(); } catch {}
+          this.transport = undefined;
+        }
+        
+        // Small delay between attempts
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    // All strategies failed
+    throw new Error(
+      `Failed to connect to MCP package "${packageName}". ` +
+      `Please verify: 1) Package name is correct, ` +
+      `2) Package exists on NPM and has MCP support, ` +
+      `3) You have internet connection, ` +
+      `4) Your environment has npx available. ` +
+      `Last error: ${lastError?.message || 'Unknown error'}`
+    );
+  }
+
+  private async getExplicitArgs(packageName: string): Promise<string[] | null> {
+    try {
+      const executableName = await this.discoverExecutableName(packageName);
+      if (executableName) {
+        return ['-y', `--package=${packageName}`, executableName];
+      }
+    } catch (error) {
+      // Silently skip
+    }
+    return null;
+  }
+
+  private async getExplicitArgsWithJS(packageName: string): Promise<string[] | null> {
+    try {
+      const result = execSync(`npm view ${packageName} bin --json 2>/dev/null || echo "{}"`, {
+        encoding: 'utf-8',
+        timeout: 5000,
+        stdio: ['pipe', 'pipe', 'pipe']
+      });
+      
+      const binData = JSON.parse(result.trim() || '{}');
+      
+      if (typeof binData === 'object' && binData !== null) {
+        const binNames = Object.keys(binData);
+        if (binNames.length > 0) {
+          const binName = binNames[0];
+          const binPath = binData[binName];
+          
+          // Try with .js extension if the bin path includes it
+          if (binPath && typeof binPath === 'string' && binPath.endsWith('.js')) {
+            return ['-y', `--package=${packageName}`, binName];
+          }
+        }
+      }
+    } catch (error) {
+      // Silently skip
+    }
+    return null;
+  }
+
+  private async connectWithArgs(_packageName: string, args: string[], timeout: number = 30000): Promise<void> {
+    // Merge custom env with current process env to preserve PATH and other critical vars
+    const processEnv: Record<string, string> = {};
+    for (const [key, value] of Object.entries(process.env)) {
+      if (value !== undefined) {
+        processEnv[key] = value;
+      }
+    }
+    
+    const envVars = {
+      ...processEnv,  // Include current process environment
+      ...(this.env || {}),  // Override with custom env if provided
+    };
+    
+    this.transport = new StdioClientTransport({
+      command: 'npx',
+      args: args,
+      env: envVars,
+    });
+
+    this.client = new Client(
+      {
+        name: 'flui-automation',
+        version: '1.0.0',
+      },
+      {
+        capabilities: {},
+      }
+    );
+    
+    // Connect with configurable timeout
+    await Promise.race([
+      this.client.connect(this.transport),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error(`Connection timeout after ${timeout/1000}s`)), timeout)
+      )
+    ]);
   }
 
   /**
@@ -98,16 +167,19 @@ export class RealMCPSandbox implements ISandbox {
    */
   private async discoverExecutableName(packageName: string): Promise<string | null> {
     try {
-      console.log(`[MCP] Querying NPM for bin name: npm view ${packageName} bin`);
-      
-      // Query NPM for bin field
-      const result = execSync(`npm view ${packageName} bin --json`, {
+      // Query NPM for bin field (suppress stderr)
+      const result = execSync(`npm view ${packageName} bin --json 2>/dev/null || echo "{}"`, {
         encoding: 'utf-8',
-        timeout: 10000,
+        timeout: 5000,
         stdio: ['pipe', 'pipe', 'pipe']
       });
       
-      const binData = JSON.parse(result.trim());
+      const trimmed = result.trim();
+      if (!trimmed || trimmed === '{}') {
+        return this.getFallbackExecutableName(packageName);
+      }
+      
+      const binData = JSON.parse(trimmed);
       
       // bin can be a string or an object
       if (typeof binData === 'string') {
@@ -117,17 +189,13 @@ export class RealMCPSandbox implements ISandbox {
         // Multiple bins - get first key
         const binNames = Object.keys(binData);
         if (binNames.length > 0) {
-          const binName = binNames[0];
-          console.log(`[MCP] Found bin name: ${binName}`);
-          return binName;
+          return binNames[0];
         }
       }
       
-      return null;
+      return this.getFallbackExecutableName(packageName);
     } catch (error) {
-      console.error('[MCP] Error querying NPM for bin:', error);
-      
-      // Fallback: try common patterns
+      // Silently fallback
       return this.getFallbackExecutableName(packageName);
     }
   }
@@ -192,7 +260,6 @@ export class RealMCPSandbox implements ISandbox {
 
       return tools;
     } catch (error) {
-      console.error('Error extracting tools:', error);
       throw new Error(`Failed to extract tools: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

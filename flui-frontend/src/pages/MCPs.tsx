@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { MainLayout } from '@/components/Layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,6 +34,7 @@ import {
   CheckCircle2,
   Eye,
   ExternalLink,
+  Sparkles,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -41,6 +42,7 @@ import {
   importMCP,
   getMCPTools,
   deleteMCP,
+  fetchMCPMetadata,
   type MCP,
   type Tool,
   type CreateMCPRequest,
@@ -68,11 +70,58 @@ const MCPs = () => {
   const [envInput, setEnvInput] = useState('');
   const [errors, setErrors] = useState<{ name?: string; source?: string }>({});
   
+  // Metadata fetching states
+  const [fetchingMetadata, setFetchingMetadata] = useState(false);
+  const [metadataFetched, setMetadataFetched] = useState(false);
+  const [sourceType, setSourceType] = useState<'npx' | 'sse'>('npx');
+  
   const { toast } = useToast();
 
   useEffect(() => {
     loadMCPs();
   }, []);
+
+  // Debounced metadata fetch when source changes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.source && formData.source.trim().length > 3 && !metadataFetched) {
+        handleFetchMetadata(formData.source.trim());
+      }
+    }, 800); // Debounce 800ms
+
+    return () => clearTimeout(timer);
+  }, [formData.source]);
+
+  const handleFetchMetadata = async (source: string) => {
+    // Skip if already fetched for this source or if fetching
+    if (fetchingMetadata) return;
+
+    try {
+      setFetchingMetadata(true);
+      const metadata = await fetchMCPMetadata(source, sourceType);
+
+      if (metadata.exists && metadata.suggestedName && metadata.suggestedDescription) {
+        // Only autofill if fields are empty
+        setFormData(prev => ({
+          ...prev,
+          name: prev.name || metadata.suggestedName,
+          description: prev.description || metadata.suggestedDescription,
+        }));
+
+        setMetadataFetched(true);
+        
+        toast({
+          title: '✨ Metadados carregados!',
+          description: `Informações preenchidas automaticamente do pacote ${metadata.metadata?.name || source}`,
+        });
+      }
+    } catch (error: any) {
+      console.error('Error fetching metadata:', error);
+      // Silently fail - don't show error to user for metadata fetch
+    } finally {
+      setFetchingMetadata(false);
+    }
+  };
 
   const loadMCPs = async () => {
     try {
@@ -224,6 +273,20 @@ const MCPs = () => {
     });
     setEnvInput('');
     setErrors({});
+    setMetadataFetched(false);
+    setFetchingMetadata(false);
+  };
+
+  const handleSourceChange = (value: string) => {
+    setFormData({ ...formData, source: value });
+    setMetadataFetched(false); // Reset to allow refetch on new source
+    
+    // Detect source type
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      setSourceType('sse');
+    } else {
+      setSourceType('npx');
+    }
   };
 
   if (loading) {
@@ -273,38 +336,29 @@ const MCPs = () => {
               </DialogHeader>
 
               <div className="space-y-4 py-4">
-                {/* Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="name">
-                    Nome <Badge variant="destructive" className="text-xs ml-1">Obrigatório</Badge>
-                  </Label>
-                  <Input
-                    id="name"
-                    placeholder="filesystem"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className={errors.name ? 'border-red-500' : ''}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-500 flex items-center gap-1">
-                      <AlertCircle className="w-4 h-4" />
-                      {errors.name}
-                    </p>
-                  )}
-                </div>
-
-                {/* Source */}
+                {/* Source - PRIMEIRO CAMPO */}
                 <div className="space-y-2">
                   <Label htmlFor="source">
-                    Source <Badge variant="destructive" className="text-xs ml-1">Obrigatório</Badge>
+                    Source (Pacote NPM) <Badge variant="destructive" className="text-xs ml-1">Obrigatório</Badge>
+                    {fetchingMetadata && (
+                      <span className="ml-2 text-xs text-muted-foreground inline-flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Buscando metadados...
+                      </span>
+                    )}
                   </Label>
-                  <Input
-                    id="source"
-                    placeholder="@modelcontextprotocol/server-filesystem"
-                    value={formData.source}
-                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                    className={errors.source ? 'border-red-500' : ''}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="source"
+                      placeholder="@modelcontextprotocol/server-filesystem"
+                      value={formData.source}
+                      onChange={(e) => handleSourceChange(e.target.value)}
+                      className={errors.source ? 'border-red-500' : ''}
+                    />
+                    {metadataFetched && (
+                      <Sparkles className="w-4 h-4 text-green-500 absolute right-3 top-3" />
+                    )}
+                  </div>
                   {errors.source && (
                     <p className="text-sm text-red-500 flex items-center gap-1">
                       <AlertCircle className="w-4 h-4" />
@@ -319,24 +373,31 @@ const MCPs = () => {
                       <p className="font-semibold">Pacotes Testados:</p>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, source: '@modelcontextprotocol/server-memory' })}
+                        onClick={() => handleSourceChange('@modelcontextprotocol/server-memory')}
                         className="block hover:text-primary"
                       >
                         • @modelcontextprotocol/server-memory
                       </button>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, source: '@modelcontextprotocol/server-filesystem' })}
+                        onClick={() => handleSourceChange('@modelcontextprotocol/server-filesystem')}
                         className="block hover:text-primary"
                       >
                         • @modelcontextprotocol/server-filesystem
                       </button>
                       <button
                         type="button"
-                        onClick={() => setFormData({ ...formData, source: '@modelcontextprotocol/server-github' })}
+                        onClick={() => handleSourceChange('@modelcontextprotocol/server-github')}
                         className="block hover:text-primary"
                       >
                         • @modelcontextprotocol/server-github
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSourceChange('@pollinations/model-context-protocol')}
+                        className="block hover:text-primary"
+                      >
+                        • @pollinations/model-context-protocol
                       </button>
                       <p className="text-xs text-muted-foreground mt-2">
                         ⚠️ Use o nome COMPLETO do pacote NPM (com @org/)
@@ -347,23 +408,62 @@ const MCPs = () => {
                     <Alert className="border-blue-500/50 bg-blue-500/10">
                       <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                       <AlertDescription className="text-blue-600">
-                        Instalando e conectando ao MCP... Aguarde (primeira vez pode demorar 30-60s)
+                        Instalando e conectando ao MCP... Aguarde (pode demorar até 2 minutos)
                       </AlertDescription>
                     </Alert>
                   )}
                 </div>
 
-                {/* Description */}
+                {/* Name - Auto-preenchido ou manual */}
+                <div className="space-y-2">
+                  <Label htmlFor="name">
+                    Nome <Badge variant="destructive" className="text-xs ml-1">Obrigatório</Badge>
+                    {metadataFetched && formData.name && (
+                      <Badge variant="outline" className="text-xs ml-2 text-green-600 border-green-600">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Auto-preenchido
+                      </Badge>
+                    )}
+                  </Label>
+                  <Input
+                    id="name"
+                    placeholder={fetchingMetadata ? 'Carregando...' : 'Nome do MCP'}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className={errors.name ? 'border-red-500' : ''}
+                    disabled={fetchingMetadata}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-red-500 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {errors.name}
+                    </p>
+                  )}
+                  {!metadataFetched && formData.source.length > 3 && !fetchingMetadata && (
+                    <p className="text-xs text-muted-foreground">
+                      💡 Não foi possível carregar metadados. Preencha manualmente.
+                    </p>
+                  )}
+                </div>
+
+                {/* Description - Auto-preenchida ou manual */}
                 <div className="space-y-2">
                   <Label htmlFor="description">
                     Descrição <Badge variant="secondary" className="text-xs ml-1">Opcional</Badge>
+                    {metadataFetched && formData.description && (
+                      <Badge variant="outline" className="text-xs ml-2 text-green-600 border-green-600">
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        Auto-preenchida
+                      </Badge>
+                    )}
                   </Label>
                   <Textarea
                     id="description"
-                    placeholder="Descrição do MCP..."
+                    placeholder={fetchingMetadata ? 'Carregando...' : 'Descrição do MCP...'}
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={3}
+                    disabled={fetchingMetadata}
                   />
                 </div>
 
