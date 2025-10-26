@@ -108,7 +108,8 @@ allToolsRoutes.get(
     // Calculate totals
     const systemCount = response.tools.system.length;
     const mcpCount = response.tools.mcps.reduce((acc: number, m: any) => acc + m.toolsCount, 0);
-    const agentCount = response.tools.agents.reduce((acc: number, a: any) => acc + a.toolsCount, 0);
+    // Agents themselves are tools - count the agents, not their sub-tools
+    const agentCount = response.tools.agents.length;
     const totalTools = systemCount + mcpCount + agentCount;
     
     response.summary = {

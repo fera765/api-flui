@@ -111,6 +111,15 @@ const Agents = () => {
     }
   };
 
+  const loadAvailableModels = async () => {
+    try {
+      const models = await getModels();
+      setAvailableModels(models);
+    } catch (error) {
+      console.error('Error loading models:', error);
+    }
+  };
+
   const loadAllTools = async () => {
     try {
       setLoadingTools(true);
@@ -396,12 +405,36 @@ const Agents = () => {
                       Modelo Padrão
                       <Badge variant="secondary" className="text-xs">Opcional</Badge>
                     </Label>
-                    <Input
-                      id="defaultModel"
-                      placeholder={configuredModel || 'Digite o nome do modelo'}
-                      value={defaultModel}
-                      onChange={(e) => setDefaultModel(e.target.value)}
-                    />
+                    <Select value={defaultModel} onValueChange={setDefaultModel}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={configuredModel || "Selecione um modelo"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {configuredModel && (
+                          <SelectGroup>
+                            <SelectLabel>Modelo do Sistema</SelectLabel>
+                            <SelectItem value={configuredModel}>
+                              {configuredModel} (padrão)
+                            </SelectItem>
+                          </SelectGroup>
+                        )}
+                        {availableModels.length > 0 && (
+                          <SelectGroup>
+                            <SelectLabel>Modelos Disponíveis</SelectLabel>
+                            {availableModels.map((model) => (
+                              <SelectItem key={model.id} value={model.id}>
+                                {model.id}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        )}
+                        {!configuredModel && availableModels.length === 0 && (
+                          <SelectGroup>
+                            <SelectLabel>Nenhum modelo disponível</SelectLabel>
+                          </SelectGroup>
+                        )}
+                      </SelectContent>
+                    </Select>
                     <p className="text-xs text-muted-foreground">
                       {configuredModel 
                         ? `Modelo do sistema: ${configuredModel}` 
