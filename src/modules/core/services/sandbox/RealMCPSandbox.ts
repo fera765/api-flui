@@ -29,8 +29,16 @@ export class RealMCPSandbox implements ISandbox {
 
   private async connectNPX(packageName: string): Promise<void> {
     try {
+      // Validate package name format
+      if (!packageName || packageName.trim() === '') {
+        throw new Error('Package name is required');
+      }
+
       // Create MCP client transport (will spawn process automatically)
       const envVars = this.env ? { ...this.env } : undefined;
+      
+      console.log(`[MCP] Connecting to NPX package: ${packageName}`);
+      console.log(`[MCP] Using command: npx -y ${packageName}`);
       
       this.transport = new StdioClientTransport({
         command: 'npx',
@@ -51,10 +59,25 @@ export class RealMCPSandbox implements ISandbox {
 
       // Connect client to transport
       await this.client.connect(this.transport);
+      
+      console.log(`[MCP] Successfully connected to ${packageName}`);
 
     } catch (error) {
-      console.error('Error connecting to NPX MCP:', error);
-      throw new Error(`Failed to load MCP from NPX: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('[MCP] Error connecting to NPX MCP:', error);
+      
+      // Provide helpful error message
+      let errorMsg = error instanceof Error ? error.message : 'Unknown error';
+      
+      if (errorMsg.includes('not found') || errorMsg.includes('Connection closed')) {
+        throw new Error(
+          `Failed to connect to MCP package "${packageName}". ` +
+          `Please verify: 1) Package name is correct (e.g., "@modelcontextprotocol/server-filesystem"), ` +
+          `2) Package exists on NPM, 3) You have internet connection. ` +
+          `Common packages: @modelcontextprotocol/server-filesystem, @modelcontextprotocol/server-memory, @modelcontextprotocol/server-github`
+        );
+      }
+      
+      throw new Error(`Failed to load MCP from NPX: ${errorMsg}`);
     }
   }
 

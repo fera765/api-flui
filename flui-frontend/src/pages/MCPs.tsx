@@ -311,9 +311,38 @@ const MCPs = () => {
                       {errors.source}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground">
-                    NPM: @org/package ou URL: https://mcp-server.com
-                  </p>
+                  <details className="text-xs">
+                    <summary className="text-muted-foreground cursor-pointer hover:text-foreground">
+                      📦 Ver exemplos de pacotes
+                    </summary>
+                    <div className="mt-2 p-2 bg-muted rounded space-y-1">
+                      <p className="font-semibold">Pacotes Testados:</p>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, source: '@modelcontextprotocol/server-memory' })}
+                        className="block hover:text-primary"
+                      >
+                        • @modelcontextprotocol/server-memory
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, source: '@modelcontextprotocol/server-filesystem' })}
+                        className="block hover:text-primary"
+                      >
+                        • @modelcontextprotocol/server-filesystem
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, source: '@modelcontextprotocol/server-github' })}
+                        className="block hover:text-primary"
+                      >
+                        • @modelcontextprotocol/server-github
+                      </button>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        ⚠️ Use o nome COMPLETO do pacote NPM (com @org/)
+                      </p>
+                    </div>
+                  </details>
                   {importing && (
                     <Alert className="border-blue-500/50 bg-blue-500/10">
                       <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
