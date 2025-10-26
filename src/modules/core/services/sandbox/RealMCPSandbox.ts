@@ -34,15 +34,20 @@ export class RealMCPSandbox implements ISandbox {
         throw new Error('Package name is required');
       }
 
+      // Determine the executable name
+      // Most MCP packages have a bin name different from package name
+      const executableName = this.getExecutableName(packageName);
+      
       // Create MCP client transport (will spawn process automatically)
       const envVars = this.env ? { ...this.env } : undefined;
       
       console.log(`[MCP] Connecting to NPX package: ${packageName}`);
-      console.log(`[MCP] Using command: npx -y ${packageName}`);
+      console.log(`[MCP] Executable: ${executableName}`);
+      console.log(`[MCP] Using command: npx -y --package=${packageName} ${executableName}`);
       
       this.transport = new StdioClientTransport({
         command: 'npx',
-        args: ['-y', packageName],
+        args: ['-y', `--package=${packageName}`, executableName],
         env: envVars,
       });
 
@@ -71,14 +76,42 @@ export class RealMCPSandbox implements ISandbox {
       if (errorMsg.includes('not found') || errorMsg.includes('Connection closed')) {
         throw new Error(
           `Failed to connect to MCP package "${packageName}". ` +
-          `Please verify: 1) Package name is correct (e.g., "@modelcontextprotocol/server-filesystem"), ` +
-          `2) Package exists on NPM, 3) You have internet connection. ` +
-          `Common packages: @modelcontextprotocol/server-filesystem, @modelcontextprotocol/server-memory, @modelcontextprotocol/server-github`
+          `Please verify: 1) Package name is correct, ` +
+          `2) Package exists on NPM and has MCP support, ` +
+          `3) You have internet connection. ` +
+          `Tested packages: @modelcontextprotocol/server-filesystem, @modelcontextprotocol/server-memory`
         );
       }
       
       throw new Error(`Failed to load MCP from NPX: ${errorMsg}`);
     }
+  }
+
+  /**
+   * Determine the executable name from package name
+   * Most MCP packages follow patterns like:
+   * - @modelcontextprotocol/server-memory -> mcp-server-memory
+   * - @org/package-name -> package-name (fallback)
+   */
+  private getExecutableName(packageName: string): string {
+    // Remove @ and organization prefix
+    let name = packageName;
+    
+    // Handle scoped packages (@org/name)
+    if (name.startsWith('@')) {
+      const parts = name.split('/');
+      if (parts.length === 2) {
+        name = parts[1]; // Get package name without @org/
+      }
+    }
+    
+    // Most official MCP servers follow the pattern: server-xyz -> mcp-server-xyz
+    if (name.startsWith('server-')) {
+      return `mcp-${name}`;
+    }
+    
+    // Fallback: use the package name as-is
+    return name;
   }
 
   private async connectSSE(_url: string): Promise<void> {
