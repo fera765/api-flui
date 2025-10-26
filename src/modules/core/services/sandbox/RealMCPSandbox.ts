@@ -20,12 +20,18 @@ export class RealMCPSandbox implements ISandbox {
   }
 
   public async loadMCP(source: string): Promise<void> {
+    console.log('[MCP-DEBUG] 📥 loadMCP() called with source:', source);
+    
     // Determine source type
     if (source.startsWith('http://') || source.startsWith('https://')) {
+      console.log('[MCP-DEBUG] 🌐 Detected SSE source');
       await this.connectSSE(source);
     } else {
+      console.log('[MCP-DEBUG] 📦 Detected NPX source');
       await this.connectNPX(source);
     }
+    
+    console.log('[MCP-DEBUG] ✅ loadMCP() completed successfully');
   }
 
   private async connectNPX(packageName: string): Promise<void> {
@@ -38,12 +44,12 @@ export class RealMCPSandbox implements ISandbox {
     
     // Try multiple connection strategies for maximum compatibility
     const strategies = [
-      // Strategy 1: Direct npx execution (most compatible, longer timeout)
-      { name: 'direct', args: ['-y', packageName], timeout: 45000 },
+      // Strategy 1: Direct npx execution (most compatible, 2 minutes timeout)
+      { name: 'direct', args: ['-y', packageName], timeout: 120000 },
       // Strategy 2: With explicit executable name discovery
-      { name: 'explicit', args: await this.getExplicitArgs(packageName), timeout: 30000 },
+      { name: 'explicit', args: await this.getExplicitArgs(packageName), timeout: 120000 },
       // Strategy 3: Try with .js extension if available
-      { name: 'explicit-js', args: await this.getExplicitArgsWithJS(packageName), timeout: 30000 },
+      { name: 'explicit-js', args: await this.getExplicitArgsWithJS(packageName), timeout: 120000 },
     ];
 
     let lastError: Error | null = null;
@@ -134,50 +140,96 @@ export class RealMCPSandbox implements ISandbox {
   private async connectWithArgs(_packageName: string, args: string[], timeout: number = 30000): Promise<void> {
     const envVars = this.env ? { ...this.env } : undefined;
     
-    console.log(`[MCP-DEBUG] Creating transport with command: npx ${args.join(' ')}`);
-    console.log(`[MCP-DEBUG] Environment vars:`, envVars ? Object.keys(envVars).length : 0);
+    console.log(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`[MCP-DEBUG] 🔧 connectWithArgs() - Starting connection process`);
+    console.log(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`[MCP-DEBUG] 📦 Command: npx ${args.join(' ')}`);
+    console.log(`[MCP-DEBUG] ⏱️  Timeout: ${timeout}ms (${timeout/1000}s)`);
+    console.log(`[MCP-DEBUG] 🌍 Environment vars:`, envVars ? Object.keys(envVars) : 'none');
     
-    this.transport = new StdioClientTransport({
-      command: 'npx',
-      args: args,
-      env: envVars,
-    });
+    console.log(`[MCP-DEBUG] Step 1/3: Creating StdioClientTransport...`);
+    
+    try {
+      this.transport = new StdioClientTransport({
+        command: 'npx',
+        args: args,
+        env: envVars,
+      });
+      console.log(`[MCP-DEBUG] ✅ StdioClientTransport created successfully`);
+    } catch (error) {
+      console.error(`[MCP-DEBUG] ❌ Failed to create StdioClientTransport:`, error);
+      throw error;
+    }
 
-    console.log(`[MCP-DEBUG] Transport created successfully`);
+    console.log(`[MCP-DEBUG] Step 2/3: Creating MCP Client...`);
 
-    this.client = new Client(
-      {
-        name: 'flui-automation',
-        version: '1.0.0',
-      },
-      {
-        capabilities: {},
-      }
-    );
-
-    console.log(`[MCP-DEBUG] Client created successfully`);
-    console.log(`[MCP-DEBUG] Starting connection (timeout: ${timeout}ms)...`);
+    try {
+      this.client = new Client(
+        {
+          name: 'flui-automation',
+          version: '1.0.0',
+        },
+        {
+          capabilities: {},
+        }
+      );
+      console.log(`[MCP-DEBUG] ✅ Client created successfully`);
+    } catch (error) {
+      console.error(`[MCP-DEBUG] ❌ Failed to create Client:`, error);
+      throw error;
+    }
+    console.log(`[MCP-DEBUG] Step 3/3: Connecting client to transport...`);
+    console.log(`[MCP-DEBUG] ⏱️  Starting timer for ${timeout/1000}s timeout...`);
     
     const startTime = Date.now();
+    let connectionResolved = false;
+    let timeoutReached = false;
     
     try {
       // Connect with configurable timeout
       await Promise.race([
         this.client.connect(this.transport).then(() => {
           const elapsed = Date.now() - startTime;
-          console.log(`[MCP-DEBUG] ✅ Connection established in ${elapsed}ms`);
+          connectionResolved = true;
+          console.log(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          console.log(`[MCP-DEBUG] ✅ Connection SUCCESSFUL!`);
+          console.log(`[MCP-DEBUG] ⏱️  Time taken: ${elapsed}ms`);
+          console.log(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+        }).catch((err) => {
+          const elapsed = Date.now() - startTime;
+          console.error(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          console.error(`[MCP-DEBUG] ❌ Connection promise REJECTED`);
+          console.error(`[MCP-DEBUG] ⏱️  Time: ${elapsed}ms`);
+          console.error(`[MCP-DEBUG] ❌ Error:`, err);
+          console.error(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          throw err;
         }),
         new Promise((_, reject) => 
           setTimeout(() => {
             const elapsed = Date.now() - startTime;
-            console.log(`[MCP-DEBUG] ⏱️  Timeout reached after ${elapsed}ms`);
+            timeoutReached = true;
+            console.log(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+            console.log(`[MCP-DEBUG] ⏱️  TIMEOUT REACHED!`);
+            console.log(`[MCP-DEBUG] ⏱️  Elapsed: ${elapsed}ms`);
+            console.log(`[MCP-DEBUG] ⏱️  Configured timeout: ${timeout}ms`);
+            console.log(`[MCP-DEBUG] ❌ Connection did not complete in time`);
+            console.log(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
             reject(new Error(`Connection timeout after ${timeout/1000}s`));
           }, timeout)
         )
       ]);
+      
+      console.log(`[MCP-DEBUG] ✅ Promise.race completed successfully`);
+      
     } catch (error) {
       const elapsed = Date.now() - startTime;
-      console.log(`[MCP-DEBUG] ❌ Connection failed after ${elapsed}ms`);
+      console.log(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+      console.log(`[MCP-DEBUG] ❌ connectWithArgs() FAILED`);
+      console.log(`[MCP-DEBUG] ⏱️  Total time: ${elapsed}ms`);
+      console.log(`[MCP-DEBUG] 📊 Connection resolved: ${connectionResolved}`);
+      console.log(`[MCP-DEBUG] 📊 Timeout reached: ${timeoutReached}`);
+      console.log(`[MCP-DEBUG] ❌ Error:`, error instanceof Error ? error.message : String(error));
+      console.log(`[MCP-DEBUG] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
       throw error;
     }
   }
@@ -253,17 +305,29 @@ export class RealMCPSandbox implements ISandbox {
   }
 
   public async extractTools(): Promise<Tool[]> {
+    console.log('[MCP-DEBUG] 🔧 Starting extractTools()...');
+    
     if (!this.client) {
+      console.log('[MCP-DEBUG] ❌ No client available!');
       return [];
     }
 
+    console.log('[MCP-DEBUG] ✅ Client exists, calling listTools()...');
+
     try {
       // List tools from MCP server
+      const startTime = Date.now();
       const result = await this.client.listTools();
+      const elapsed = Date.now() - startTime;
+      
+      console.log(`[MCP-DEBUG] ✅ listTools() returned in ${elapsed}ms`);
+      console.log(`[MCP-DEBUG] 📊 Found ${result.tools.length} tools`);
       
       const tools: Tool[] = [];
 
       for (const toolDef of result.tools) {
+        console.log(`[MCP-DEBUG]   📌 Processing tool: ${toolDef.name}`);
+        
         const tool = new Tool({
           id: randomUUID(),
           name: toolDef.name,
@@ -279,9 +343,12 @@ export class RealMCPSandbox implements ISandbox {
         this.tools.set(tool.getName(), tool);
       }
 
+      console.log(`[MCP-DEBUG] ✅ All ${tools.length} tools processed successfully`);
       return tools;
     } catch (error) {
-      console.error('Error extracting tools:', error);
+      console.error('[MCP-DEBUG] ❌ Error extracting tools:', error);
+      console.error('[MCP-DEBUG] ❌ Error type:', error instanceof Error ? error.constructor.name : typeof error);
+      console.error('[MCP-DEBUG] ❌ Error message:', error instanceof Error ? error.message : String(error));
       throw new Error(`Failed to extract tools: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
