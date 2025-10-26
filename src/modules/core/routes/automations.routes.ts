@@ -1,18 +1,14 @@
 import { Router } from 'express';
 import { AutomationController } from '../controllers/AutomationController';
 import { AutomationService } from '../services/AutomationService';
-import { AutomationRepositoryInMemory } from '../repositories/AutomationRepositoryInMemory';
 import { AutomationExecutor } from '../services/automation/AutomationExecutor';
-import { SystemToolRepositoryInMemory } from '../repositories/SystemToolRepositoryInMemory';
-import { AgentRepositoryInMemory } from '../repositories/AgentRepositoryInMemory';
 import { asyncHandler } from '@shared/utils/asyncHandler';
+import { automationRepository, systemToolRepository, agentRepository } from '@shared/repositories/singletons';
 
 const automationsRoutes = Router();
 
-// Singleton repository instances
-const automationRepository = new AutomationRepositoryInMemory();
-const toolRepository = new SystemToolRepositoryInMemory();
-const agentRepository = new AgentRepositoryInMemory();
+// Use shared singleton instances
+const toolRepository = systemToolRepository;
 
 // Services and Controllers
 const automationExecutor = new AutomationExecutor(toolRepository, agentRepository);

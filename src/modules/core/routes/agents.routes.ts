@@ -1,13 +1,10 @@
 import { Router } from 'express';
 import { AgentController } from '../controllers/AgentController';
 import { AgentService } from '../services/AgentService';
-import { AgentRepositoryInMemory } from '../repositories/AgentRepositoryInMemory';
 import { asyncHandler } from '@shared/utils/asyncHandler';
+import { agentRepository } from '@shared/repositories/singletons';
 
 const agentsRoutes = Router();
-
-// Singleton repository instance
-const agentRepository = new AgentRepositoryInMemory();
 
 // Services and Controllers
 const agentService = new AgentService(agentRepository);

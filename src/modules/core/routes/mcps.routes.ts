@@ -1,13 +1,10 @@
 import { Router } from 'express';
 import { MCPController } from '../controllers/MCPController';
 import { MCPService } from '../services/MCPService';
-import { MCPRepositoryInMemory } from '../repositories/MCPRepositoryInMemory';
 import { asyncHandler } from '@shared/utils/asyncHandler';
+import { mcpRepository } from '@shared/repositories/singletons';
 
 const mcpsRoutes = Router();
-
-// Singleton repository instance
-const mcpRepository = new MCPRepositoryInMemory();
 
 // Services and Controllers
 const mcpService = new MCPService(mcpRepository);

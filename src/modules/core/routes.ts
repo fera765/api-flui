@@ -4,13 +4,13 @@ import { SystemConfigController } from './controllers/SystemConfigController';
 import { ModelsController } from './controllers/ModelsController';
 import { SystemConfigService } from './services/SystemConfigService';
 import { ModelsService } from './services/ModelsService';
-import { SystemConfigRepositoryInMemory } from './repositories/SystemConfigRepositoryInMemory';
 import { asyncHandler } from '@shared/utils/asyncHandler';
+import { systemConfigRepository } from '@shared/repositories/singletons';
 
 const coreRoutes = Router();
 
-// Singleton repository instance
-const configRepository = new SystemConfigRepositoryInMemory();
+// Use shared singleton instance
+const configRepository = systemConfigRepository;
 
 // Export for testing purposes
 export const __testOnly__ = {
