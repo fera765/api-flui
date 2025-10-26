@@ -2,7 +2,7 @@ import { CreateMCPProps, ImportMCPResult, MCPResponse } from '../domain/MCP';
 import { ToolResponse } from '../domain/Tool';
 import { IMCPRepository } from '../repositories/IMCPRepository';
 import { ISandbox } from './sandbox/ISandbox';
-import { MockSandbox } from './sandbox/MockSandbox';
+import { RealMCPSandbox } from './sandbox/RealMCPSandbox';
 import { AppError } from '@shared/errors';
 
 export interface IMCPService {
@@ -27,7 +27,7 @@ export class MCPService implements IMCPService {
     }
 
     // Create and initialize sandbox
-    const sandbox = new MockSandbox();
+    const sandbox = new RealMCPSandbox();
     await sandbox.initialize(props.env);
 
     // Load MCP in sandbox
