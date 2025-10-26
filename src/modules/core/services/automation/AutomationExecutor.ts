@@ -204,7 +204,14 @@ export class AutomationExecutor implements IAutomationExecutor {
 
     // Get agent's tools (can be from SystemTools or MCPs)
     const agentTools = agent.getTools();
-    const availableToolNames = agentTools.map(t => t.getName());
+    const availableToolNames = agentTools.map(t => {
+      // Handle both Tool instances and plain ToolResponse objects
+      if (typeof t === 'object' && 'getName' in t && typeof t.getName === 'function') {
+        return t.getName();
+      }
+      // It's a ToolResponse object
+      return (t as any).name;
+    });
 
     // Agent now has access to all tools (System + MCP tools)
     // In production, this would integrate with LLM to intelligently use these tools

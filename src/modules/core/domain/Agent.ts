@@ -6,7 +6,7 @@ export interface AgentProps {
   description?: string;
   prompt: string;
   defaultModel?: string;
-  tools: Tool[];
+  tools: (Tool | ToolResponse)[];
 }
 
 export interface AgentResponse {
@@ -23,7 +23,7 @@ export interface CreateAgentProps {
   description?: string;
   prompt: string;
   defaultModel?: string;
-  tools?: Tool[];
+  tools?: (Tool | ToolResponse)[];
 }
 
 export interface UpdateAgentProps {
@@ -31,7 +31,7 @@ export interface UpdateAgentProps {
   description?: string;
   prompt?: string;
   defaultModel?: string;
-  tools?: Tool[];
+  tools?: (Tool | ToolResponse)[];
 }
 
 export class Agent {
@@ -40,7 +40,7 @@ export class Agent {
   private description?: string;
   private prompt: string;
   private defaultModel?: string;
-  private tools: Tool[];
+  private tools: (Tool | ToolResponse)[];
 
   constructor(props: AgentProps) {
     this.id = props.id;
@@ -71,7 +71,7 @@ export class Agent {
     return this.defaultModel;
   }
 
-  public getTools(): Tool[] {
+  public getTools(): (Tool | ToolResponse)[] {
     return this.tools;
   }
 
@@ -100,7 +100,14 @@ export class Agent {
       description: this.description,
       prompt: this.prompt,
       defaultModel: this.defaultModel,
-      tools: this.tools.map(tool => tool.toJSON()),
+      tools: this.tools.map(tool => {
+        // Handle both Tool instances and plain ToolResponse objects
+        if (typeof tool === 'object' && 'toJSON' in tool && typeof tool.toJSON === 'function') {
+          return tool.toJSON();
+        }
+        // If it's already a plain object (ToolResponse), return as-is
+        return tool as ToolResponse;
+      }),
     };
   }
 }
