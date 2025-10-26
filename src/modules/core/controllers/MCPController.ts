@@ -10,34 +10,16 @@ export class MCPController {
   }
 
   public async import(request: Request, response: Response): Promise<Response> {
-    console.log('[MCPController] 📨 Received import request');
-    console.log('[MCPController] 📦 Body:', JSON.stringify(request.body, null, 2));
-    
     const { name, source, description, env } = request.body;
 
-    console.log('[MCPController] 🔄 Calling MCPService.importMCP()...');
-    
-    try {
-      const startTime = Date.now();
-      const result = await this.mcpService.importMCP({
-        name,
-        source,
-        description,
-        env,
-      });
-      const elapsed = Date.now() - startTime;
-      
-      console.log(`[MCPController] ✅ Import completed in ${elapsed}ms`);
-      console.log('[MCPController] 📊 Result:', JSON.stringify(result, null, 2));
-      
-      return response.status(201).json(result);
-    } catch (error) {
-      console.error('[MCPController] ❌ Import failed');
-      console.error('[MCPController] ❌ Error type:', error instanceof Error ? error.constructor.name : typeof error);
-      console.error('[MCPController] ❌ Error message:', error instanceof Error ? error.message : String(error));
-      console.error('[MCPController] ❌ Stack:', error instanceof Error ? error.stack : 'No stack');
-      throw error;
-    }
+    const result = await this.mcpService.importMCP({
+      name,
+      source,
+      description,
+      env,
+    });
+
+    return response.status(201).json(result);
   }
 
   public async getAll(_request: Request, response: Response): Promise<Response> {

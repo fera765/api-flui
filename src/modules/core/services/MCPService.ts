@@ -18,81 +18,29 @@ export class MCPService implements IMCPService {
   constructor(private readonly repository: IMCPRepository) {}
 
   public async importMCP(props: CreateMCPProps): Promise<ImportMCPResult> {
-    console.log('[MCPService] 🚀 Starting MCP import...');
-    console.log('[MCPService] 📦 Package:', props.source);
-    console.log('[MCPService] 🏷️  Name:', props.name);
-    console.log('[MCPService] 📝 Description:', props.description);
-    
     if (!props.name || props.name.trim() === '') {
-      console.log('[MCPService] ❌ Validation failed: Name is required');
       throw new AppError('Name is required', 400);
     }
 
     if (!props.source || props.source.trim() === '') {
-      console.log('[MCPService] ❌ Validation failed: Source is required');
       throw new AppError('Source is required', 400);
     }
 
-    console.log('[MCPService] ✅ Validation passed');
-    console.log('[MCPService] 🔧 Step 1/4: Creating sandbox...');
-    
     // Create and initialize sandbox
     const sandbox = new RealMCPSandbox();
-    
-    console.log('[MCPService] ✅ Sandbox created');
-    console.log('[MCPService] 🔧 Step 2/4: Initializing sandbox...');
-    
     await sandbox.initialize(props.env);
-    
-    console.log('[MCPService] ✅ Sandbox initialized');
-    console.log('[MCPService] 🔧 Step 3/4: Loading MCP...');
-    console.log('[MCPService] ⏱️  This may take up to 2 minutes...');
 
-    const loadStartTime = Date.now();
-    try {
-      await sandbox.loadMCP(props.source);
-      const loadElapsed = Date.now() - loadStartTime;
-      console.log(`[MCPService] ✅ MCP loaded successfully in ${loadElapsed}ms`);
-    } catch (error) {
-      const loadElapsed = Date.now() - loadStartTime;
-      console.error(`[MCPService] ❌ Failed to load MCP after ${loadElapsed}ms`);
-      console.error('[MCPService] ❌ Error:', error);
-      throw error;
-    }
-
-    console.log('[MCPService] 🔧 Step 4/4: Extracting tools...');
+    // Load MCP in sandbox
+    await sandbox.loadMCP(props.source);
 
     // Extract tools from MCP
-    const extractStartTime = Date.now();
-    let tools;
-    try {
-      tools = await sandbox.extractTools();
-      const extractElapsed = Date.now() - extractStartTime;
-      console.log(`[MCPService] ✅ Tools extracted in ${extractElapsed}ms`);
-      console.log(`[MCPService] 📊 Total tools found: ${tools.length}`);
-    } catch (error) {
-      const extractElapsed = Date.now() - extractStartTime;
-      console.error(`[MCPService] ❌ Failed to extract tools after ${extractElapsed}ms`);
-      console.error('[MCPService] ❌ Error:', error);
-      throw error;
-    }
+    const tools = await sandbox.extractTools();
 
-    console.log('[MCPService] 💾 Saving MCP to repository...');
-    
     // Create MCP with extracted tools
     const mcp = await this.repository.create(props, tools);
-    
-    console.log('[MCPService] ✅ MCP saved with ID:', mcp.getId());
 
     // Store sandbox for later use
     this.sandboxes.set(mcp.getId(), sandbox);
-    
-    console.log('[MCPService] ✅ Sandbox stored for future use');
-    console.log('[MCPService] 🎉 Import completed successfully!');
-    console.log('[MCPService] 📊 Summary:');
-    console.log(`[MCPService]    - MCP ID: ${mcp.getId()}`);
-    console.log(`[MCPService]    - Name: ${props.name}`);
-    console.log(`[MCPService]    - Tools: ${tools.length}`);
 
     return {
       mcp: mcp.toJSON(),
