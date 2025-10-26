@@ -9,6 +9,7 @@ import Settings from "./pages/Settings";
 import Agents from "./pages/Agents";
 import MCPs from "./pages/MCPs";
 import AllTools from "./pages/AllTools";
+import Automations from "./pages/Automations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
