@@ -89,6 +89,7 @@ const Agents = () => {
   useEffect(() => {
     loadAgents();
     loadSystemConfig();
+    loadAvailableModels();
   }, []);
 
   const loadAgents = async () => {
