@@ -216,17 +216,15 @@ const Settings = () => {
     <MainLayout>
       <div className="max-w-3xl mx-auto space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Settings2 className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">Configurações do Sistema</h1>
-              <p className="text-muted-foreground">
-                Configure o endpoint da LLM e selecione o modelo
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-primary/10 rounded-lg">
+            <Settings2 className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Configurações do Sistema</h1>
+            <p className="text-sm text-muted-foreground">
+              Configure o endpoint da LLM e selecione o modelo
+            </p>
           </div>
         </div>
 
@@ -410,7 +408,7 @@ const Settings = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
                 onClick={handleSave}
                 disabled={saving || loadingModels}
@@ -425,7 +423,7 @@ const Settings = () => {
                 ) : (
                   <>
                     <CheckCircle2 className="mr-2 h-4 w-4" />
-                    {configExists ? 'Atualizar Configuração' : 'Salvar Configuração'}
+                    {configExists ? 'Atualizar' : 'Salvar'}
                   </>
                 )}
               </Button>
@@ -436,11 +434,12 @@ const Settings = () => {
                   onClick={() => fetchModels()}
                   disabled={loadingModels}
                   size="lg"
+                  className="sm:w-auto"
                 >
                   {loadingModels ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    'Recarregar Modelos'
+                    'Recarregar'
                   )}
                 </Button>
               )}
