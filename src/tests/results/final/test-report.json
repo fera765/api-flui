@@ -1,0 +1,147 @@
+{
+  "phase": "FINAL",
+  "summary": {
+    "totalTests": 16,
+    "passed": 16,
+    "failed": 0,
+    "successRate": "100.00%",
+    "averageResponseTime": "7.50ms",
+    "totalDuration": "913ms",
+    "timestamp": "2025-10-26T13:05:02.443Z"
+  },
+  "results": [
+    {
+      "route": "/api/automations",
+      "method": "POST",
+      "status": "OK",
+      "statusCode": 201,
+      "responseTime": 4,
+      "timestamp": "2025-10-26T13:05:01.721Z"
+    },
+    {
+      "route": "/api/automations/:id",
+      "method": "GET",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 7,
+      "timestamp": "2025-10-26T13:05:01.729Z"
+    },
+    {
+      "route": "/api/automations/:id",
+      "method": "PATCH",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 8,
+      "timestamp": "2025-10-26T13:05:01.738Z"
+    },
+    {
+      "route": "/api/automations/:id/execute",
+      "method": "POST",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 5,
+      "timestamp": "2025-10-26T13:05:01.744Z"
+    },
+    {
+      "route": "/api/execution/:id/start",
+      "method": "POST",
+      "status": "OK",
+      "statusCode": 202,
+      "responseTime": 14,
+      "timestamp": "2025-10-26T13:05:01.758Z"
+    },
+    {
+      "route": "/api/execution/:id/status",
+      "method": "GET",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 17,
+      "timestamp": "2025-10-26T13:05:02.276Z"
+    },
+    {
+      "route": "/api/execution/:id/logs",
+      "method": "GET",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 17,
+      "timestamp": "2025-10-26T13:05:02.293Z"
+    },
+    {
+      "route": "/api/automations/export/:id",
+      "method": "GET",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 8,
+      "timestamp": "2025-10-26T13:05:02.301Z"
+    },
+    {
+      "route": "/api/automations/import/validate",
+      "method": "POST",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 5,
+      "timestamp": "2025-10-26T13:05:02.307Z"
+    },
+    {
+      "route": "/api/automations/import",
+      "method": "POST",
+      "status": "OK",
+      "statusCode": 201,
+      "responseTime": 9,
+      "timestamp": "2025-10-26T13:05:02.316Z"
+    },
+    {
+      "route": "/api/automations/export/all",
+      "method": "GET",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 8,
+      "timestamp": "2025-10-26T13:05:02.324Z"
+    },
+    {
+      "route": "/api/tor/import",
+      "method": "POST",
+      "status": "OK",
+      "statusCode": 201,
+      "responseTime": 0,
+      "timestamp": "2025-10-26T13:05:02.416Z"
+    },
+    {
+      "route": "/api/tor/:id",
+      "method": "GET",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 2,
+      "timestamp": "2025-10-26T13:05:02.418Z"
+    },
+    {
+      "route": "/api/tor/versions/:name",
+      "method": "GET",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 6,
+      "timestamp": "2025-10-26T13:05:02.424Z"
+    },
+    {
+      "route": "/api/tor/:id",
+      "method": "DELETE",
+      "status": "OK",
+      "statusCode": 204,
+      "responseTime": 7,
+      "timestamp": "2025-10-26T13:05:02.431Z"
+    },
+    {
+      "route": "/api/tor",
+      "method": "GET",
+      "status": "OK",
+      "statusCode": 200,
+      "responseTime": 3,
+      "timestamp": "2025-10-26T13:05:02.434Z"
+    }
+  ],
+  "context": {
+    "toolId": "98dc8791-2026-40a4-be51-f60aac98daa0",
+    "automationId": "187ecb07-a59a-44de-9ad9-2046239025b5",
+    "torToolId": "65432268-9152-4749-bdb9-1845a131e555"
+  }
+}
