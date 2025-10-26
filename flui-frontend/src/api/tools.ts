@@ -1,17 +1,23 @@
 import { apiClient } from '@/lib/api';
 
+export interface ToolSchema {
+  type: string;
+  properties: Record<string, any>;
+  required?: string[];
+  additionalProperties?: boolean;
+}
+
 export interface Tool {
   id: string;
   name: string;
   description?: string;
-  inputSchema: object;
-  outputSchema: object;
-  source?: 'system' | 'mcp' | 'agent';
-  mcpName?: string;
-  agentName?: string;
+  type?: string;
+  inputSchema?: ToolSchema;
+  outputSchema?: ToolSchema;
+  config?: Record<string, any>;
 }
 
-export interface MCPToolsGroup {
+export interface MCPTools {
   mcp: {
     id: string;
     name: string;
@@ -23,7 +29,7 @@ export interface MCPToolsGroup {
   toolsCount: number;
 }
 
-export interface AgentToolsGroup {
+export interface AgentTools {
   agent: {
     id: string;
     name: string;
@@ -37,8 +43,8 @@ export interface AgentToolsGroup {
 export interface AllToolsResponse {
   tools: {
     system: Tool[];
-    mcps: MCPToolsGroup[];
-    agents: AgentToolsGroup[];
+    mcps: MCPTools[];
+    agents: AgentTools[];
   };
   summary: {
     systemTools: number;
@@ -59,17 +65,11 @@ export interface AllToolsResponse {
     mcpId: string | null;
     agentId: string | null;
   };
-  toolsPaginated: Tool[];
-}
-
-export interface SearchToolsResponse {
-  query: string;
-  tools: Tool[];
-  total: number;
+  toolsPaginated: any[];
 }
 
 /**
- * Get all tools from all sources (SystemTools + MCPs + Agents)
+ * Get all tools (System + MCPs + Agents)
  */
 export const getAllTools = async (params?: {
   page?: number;
@@ -85,7 +85,11 @@ export const getAllTools = async (params?: {
 /**
  * Search tools by name or description
  */
-export const searchTools = async (query: string): Promise<SearchToolsResponse> => {
+export const searchTools = async (query: string): Promise<{
+  query: string;
+  tools: Tool[];
+  total: number;
+}> => {
   const response = await apiClient.get('/api/all-tools/search', {
     params: { q: query },
   });
