@@ -2,9 +2,6 @@ import { SystemConfigProps, SystemConfigResponse } from '../domain/SystemConfig'
 import { ISystemConfigRepository } from '../repositories/ISystemConfigRepository';
 import { AppError } from '@shared/errors';
 
-const DEFAULT_ENDPOINT = 'https://api.llm7.io/v1';
-const DEFAULT_MODEL = 'gpt-4';
-
 export interface ISystemConfigService {
   getConfig(): Promise<SystemConfigResponse>;
   createConfig(config: SystemConfigProps): Promise<SystemConfigResponse>;
@@ -18,10 +15,7 @@ export class SystemConfigService implements ISystemConfigService {
     const config = await this.repository.findCurrent();
 
     if (!config) {
-      return {
-        endpoint: DEFAULT_ENDPOINT,
-        model: DEFAULT_MODEL,
-      };
+      throw new AppError('Configuration not found', 404);
     }
 
     return config.toJSON();
