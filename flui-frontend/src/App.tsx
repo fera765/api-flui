@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Index from "./pages/Index";
 import Settings from "./pages/Settings";
+import Agents from "./pages/Agents";
 import MCPs from "./pages/MCPs";
 import AllTools from "./pages/AllTools";
 import NotFound from "./pages/NotFound";
@@ -22,6 +23,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/agents" element={<Agents />} />
             <Route path="/mcps" element={<MCPs />} />
             <Route path="/tools" element={<AllTools />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
