@@ -8,12 +8,14 @@ import { executionRoutes } from '@modules/core/routes/execution.routes';
 import { conditionRoutes } from '@modules/core/routes/condition.routes';
 import { importExportRoutes } from '@modules/core/routes/import-export.routes';
 import { allToolsRoutes } from '@modules/core/routes/all-tools.routes';
+import { dashboardRoutes } from '@modules/core/routes/dashboard.routes';
 import { toolsRoutes as torRoutes } from '@modules/tools/routes';
 import { chatRoutes } from '@modules/chat/routes';
 
 const routes = Router();
 
 routes.use('/', coreRoutes);
+routes.use('/', dashboardRoutes); // Dashboard statistics
 routes.use('/api/agents', agentsRoutes);
 routes.use('/api/mcps', mcpsRoutes);
 routes.use('/api/all-tools', allToolsRoutes); // All tools from System + MCPs

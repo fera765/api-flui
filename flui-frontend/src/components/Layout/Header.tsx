@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTheme, themes, type ThemeName } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -31,7 +32,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </Button>
 
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <div className="relative">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center">
                 <svg
@@ -51,7 +52,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
             <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               Flui
             </h1>
-          </div>
+          </Link>
         </div>
 
         {/* Right side - Theme selector */}
