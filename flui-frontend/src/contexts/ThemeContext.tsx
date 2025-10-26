@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export type ThemeMode = 'light' | 'dark';
 
-export type ThemeName = 'ocean' | 'forest' | 'sunset' | 'midnight';
+export type ThemeName = 'ocean' | 'forest' | 'sunset' | 'midnight' | 'allblack';
 
 export interface Theme {
   name: ThemeName;
@@ -37,6 +37,10 @@ export const themes: Record<ThemeName, { label: string; color: string }> = {
   midnight: {
     label: 'Midnight',
     color: '#8B5CF6', // Violet purple
+  },
+  allblack: {
+    label: 'All Black',
+    color: '#000000', // Pure black
   },
 };
 
