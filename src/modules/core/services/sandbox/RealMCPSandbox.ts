@@ -134,11 +134,16 @@ export class RealMCPSandbox implements ISandbox {
   private async connectWithArgs(_packageName: string, args: string[], timeout: number = 30000): Promise<void> {
     const envVars = this.env ? { ...this.env } : undefined;
     
+    console.log(`[MCP-DEBUG] Creating transport with command: npx ${args.join(' ')}`);
+    console.log(`[MCP-DEBUG] Environment vars:`, envVars ? Object.keys(envVars).length : 0);
+    
     this.transport = new StdioClientTransport({
       command: 'npx',
       args: args,
       env: envVars,
     });
+
+    console.log(`[MCP-DEBUG] Transport created successfully`);
 
     this.client = new Client(
       {
@@ -150,13 +155,31 @@ export class RealMCPSandbox implements ISandbox {
       }
     );
 
-    // Connect with configurable timeout
-    await Promise.race([
-      this.client.connect(this.transport),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error(`Connection timeout after ${timeout/1000}s`)), timeout)
-      )
-    ]);
+    console.log(`[MCP-DEBUG] Client created successfully`);
+    console.log(`[MCP-DEBUG] Starting connection (timeout: ${timeout}ms)...`);
+    
+    const startTime = Date.now();
+    
+    try {
+      // Connect with configurable timeout
+      await Promise.race([
+        this.client.connect(this.transport).then(() => {
+          const elapsed = Date.now() - startTime;
+          console.log(`[MCP-DEBUG] ✅ Connection established in ${elapsed}ms`);
+        }),
+        new Promise((_, reject) => 
+          setTimeout(() => {
+            const elapsed = Date.now() - startTime;
+            console.log(`[MCP-DEBUG] ⏱️  Timeout reached after ${elapsed}ms`);
+            reject(new Error(`Connection timeout after ${timeout/1000}s`));
+          }, timeout)
+        )
+      ]);
+    } catch (error) {
+      const elapsed = Date.now() - startTime;
+      console.log(`[MCP-DEBUG] ❌ Connection failed after ${elapsed}ms`);
+      throw error;
+    }
   }
 
   /**
