@@ -1,5 +1,4 @@
 import { randomUUID } from 'crypto';
-import { spawn, ChildProcess } from 'child_process';
 import { Tool } from '../../domain/Tool';
 import { ISandbox, SandboxExecutionResult } from './ISandbox';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -13,7 +12,6 @@ export class RealMCPSandbox implements ISandbox {
   private tools: Map<string, Tool> = new Map();
   private client?: Client;
   private transport?: StdioClientTransport;
-  private process?: ChildProcess;
   private env?: Record<string, string>;
 
   public async initialize(env?: Record<string, string>): Promise<void> {
@@ -31,19 +29,13 @@ export class RealMCPSandbox implements ISandbox {
 
   private async connectNPX(packageName: string): Promise<void> {
     try {
-      // Start MCP server via npx
-      const args = ['-y', packageName];
+      // Create MCP client transport (will spawn process automatically)
+      const envVars = this.env ? { ...this.env } : undefined;
       
-      this.process = spawn('npx', args, {
-        env: { ...process.env, ...this.env },
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
-
-      // Create MCP client transport
       this.transport = new StdioClientTransport({
         command: 'npx',
-        args,
-        env: this.env,
+        args: ['-y', packageName],
+        env: envVars,
       });
 
       // Create MCP client
@@ -156,16 +148,10 @@ export class RealMCPSandbox implements ISandbox {
         this.client = undefined;
       }
 
-      // Close transport
+      // Close transport (will also kill the spawned process)
       if (this.transport) {
         await this.transport.close();
         this.transport = undefined;
-      }
-
-      // Kill process
-      if (this.process && !this.process.killed) {
-        this.process.kill();
-        this.process = undefined;
       }
 
       this.tools.clear();
