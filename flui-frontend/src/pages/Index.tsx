@@ -29,8 +29,8 @@ const Index = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8 animate-fade-in" style={{animationDelay: '0.6s'}}>
-            <Button size="lg" className="gap-2 min-w-[200px]">
-              Começar
+            <Button size="lg" className="gap-2 min-w-[200px]" onClick={() => window.location.href = '/settings'}>
+              Configurar Sistema
               <ArrowRight className="w-4 h-4" />
             </Button>
             <Button size="lg" variant="outline" className="min-w-[200px]">

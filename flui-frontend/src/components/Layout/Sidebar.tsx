@@ -1,10 +1,48 @@
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Link, useLocation } from 'react-router-dom';
 
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
+}
+
+function SidebarLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  const location = useLocation();
+  const isActive = location.pathname === href;
+
+  return (
+    <Link
+      to={href}
+      className={cn(
+        'flex items-center gap-3 px-3 py-2 rounded-lg transition-colors',
+        'hover:bg-accent hover:text-accent-foreground',
+        isActive && 'bg-accent text-accent-foreground font-medium'
+      )}
+    >
+      {icon}
+      <span>{label}</span>
+    </Link>
+  );
+}
+
+function SidebarIconLink({ href, icon }: { href: string; icon: React.ReactNode }) {
+  const location = useLocation();
+  const isActive = location.pathname === href;
+
+  return (
+    <Link
+      to={href}
+      className={cn(
+        'p-2 rounded-lg transition-colors',
+        'hover:bg-accent hover:text-accent-foreground',
+        isActive && 'bg-accent text-accent-foreground'
+      )}
+    >
+      {icon}
+    </Link>
+  );
 }
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
@@ -50,10 +88,17 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
         {/* Sidebar Content */}
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="space-y-2 px-3">
-            {/* Menu items will go here */}
-            {isOpen && (
-              <div className="text-sm text-muted-foreground text-center py-8">
-                Menu em breve...
+            {isOpen ? (
+              <>
+                <SidebarLink
+                  href="/settings"
+                  icon={<Settings className="w-5 h-5" />}
+                  label="Configurações"
+                />
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <SidebarIconLink href="/settings" icon={<Settings className="w-5 h-5" />} />
               </div>
             )}
           </nav>
