@@ -63,6 +63,29 @@ export const fetchModelsFromEndpoint = async (
 };
 
 /**
+ * Get models from backend API
+ */
+export const getModels = async (): Promise<Model[]> => {
+  try {
+    const response = await apiClient.get('/api/models');
+    const data = response.data;
+    
+    // Handle both array response and object with models property
+    if (Array.isArray(data)) {
+      return data;
+    } else if (data.models && Array.isArray(data.models)) {
+      return data.models;
+    }
+    
+    return [];
+  } catch (error: any) {
+    console.error('Error fetching models from API:', error);
+    // If backend API fails, return empty array
+    return [];
+  }
+};
+
+/**
  * Get system config from backend
  */
 export const getSystemConfig = async (): Promise<SystemConfig | null> => {

@@ -5,13 +5,14 @@ export class AgentController {
   constructor(private readonly agentService: AgentService) {}
 
   public async create(request: Request, response: Response): Promise<Response> {
-    const { name, description, prompt, defaultModel } = request.body;
+    const { name, description, prompt, defaultModel, tools } = request.body;
 
     const agent = await this.agentService.createAgent({
       name,
       description,
       prompt,
       defaultModel,
+      tools,
     });
 
     return response.status(201).json(agent);
@@ -30,13 +31,14 @@ export class AgentController {
 
   public async update(request: Request, response: Response): Promise<Response> {
     const { id } = request.params;
-    const { name, description, prompt, defaultModel } = request.body;
+    const { name, description, prompt, defaultModel, tools } = request.body;
 
     const agent = await this.agentService.updateAgent(id, {
       name,
       description,
       prompt,
       defaultModel,
+      tools,
     });
 
     return response.status(200).json(agent);

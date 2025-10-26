@@ -91,25 +91,25 @@ allToolsRoutes.get(
         
         const agentTools = agent.getTools();
         
-        if (agentTools.length > 0) {
-          response.tools.agents.push({
-            agent: {
-              id: agent.getId(),
-              name: agent.getName(),
-              description: agent.getDescription(),
-              defaultModel: agent.getDefaultModel(),
-            },
-            tools: agentTools.map(tool => tool.toJSON()),
-            toolsCount: agentTools.length,
-          });
-        }
+        // Always include agent (even with 0 tools) to show agents as available tools
+        response.tools.agents.push({
+          agent: {
+            id: agent.getId(),
+            name: agent.getName(),
+            description: agent.getDescription(),
+            defaultModel: agent.getDefaultModel(),
+          },
+          tools: agentTools.map(tool => tool.toJSON()),
+          toolsCount: agentTools.length,
+        });
       }
     }
     
     // Calculate totals
     const systemCount = response.tools.system.length;
     const mcpCount = response.tools.mcps.reduce((acc: number, m: any) => acc + m.toolsCount, 0);
-    const agentCount = response.tools.agents.reduce((acc: number, a: any) => acc + a.toolsCount, 0);
+    // Agents themselves are tools - count the agents, not their sub-tools
+    const agentCount = response.tools.agents.length;
     const totalTools = systemCount + mcpCount + agentCount;
     
     response.summary = {
