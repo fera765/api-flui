@@ -1,8 +1,9 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
 import { cn } from '@/lib/utils';
-import { Bot, Zap, Wrench, GitBranch, Package, Users } from 'lucide-react';
+import { Bot, Zap, Wrench, GitBranch, Package, Settings, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 export interface CustomNodeData {
   label: string;
@@ -11,6 +12,12 @@ export interface CustomNodeData {
   description?: string;
   icon?: string;
   isFirst?: boolean;
+  toolId?: string;
+  config?: Record<string, any>;
+  inputSchema?: Record<string, any>;
+  outputSchema?: Record<string, any>;
+  onConfigure?: (nodeId: string) => void;
+  onDelete?: (nodeId: string) => void;
 }
 
 const getNodeConfig = (type: CustomNodeData['type']) => {
@@ -58,9 +65,23 @@ const getNodeConfig = (type: CustomNodeData['type']) => {
   }
 };
 
-export const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) => {
+export const CustomNode = memo(({ data, selected, id }: NodeProps<CustomNodeData>) => {
   const config = getNodeConfig(data.type);
   const Icon = config.icon;
+
+  const handleConfigure = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (data.onConfigure) {
+      data.onConfigure(id);
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (data.onDelete) {
+      data.onDelete(id);
+    }
+  };
 
   return (
     <div
@@ -107,6 +128,27 @@ export const CustomNode = memo(({ data, selected }: NodeProps<CustomNodeData>) =
             {data.subtype}
           </p>
         )}
+
+        {/* Action Buttons */}
+        <div className="flex gap-1 pt-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-xs hover:bg-primary/10"
+            onClick={handleConfigure}
+          >
+            <Settings className="w-3 h-3 mr-1" />
+            Config
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 px-2 text-xs hover:bg-destructive/10 hover:text-destructive"
+            onClick={handleDelete}
+          >
+            <Trash2 className="w-3 h-3" />
+          </Button>
+        </div>
       </div>
 
       {/* Handles */}

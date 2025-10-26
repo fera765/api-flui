@@ -238,10 +238,10 @@ export function WorkflowEditor({
   return (
     <div className="relative w-full h-full">
       {/* Toolbar */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
         <Button
           onClick={handleOpenModal}
-          className="gap-2 shadow-lg"
+          className="gap-2 shadow-lg w-full sm:w-auto"
           size="lg"
         >
           <Plus className="w-4 h-4" />
@@ -253,22 +253,24 @@ export function WorkflowEditor({
             <Button
               onClick={handleSave}
               variant="outline"
-              className="gap-2 shadow-lg bg-background"
+              className="gap-2 shadow-lg bg-background w-full sm:w-auto"
               size="lg"
             >
               <Save className="w-4 h-4" />
-              Salvar
+              <span className="hidden sm:inline">Salvar</span>
+              <span className="sm:hidden">💾</span>
             </Button>
 
             {hasTrigger && (
               <Button
                 onClick={handleExecute}
                 variant="default"
-                className="gap-2 shadow-lg"
+                className="gap-2 shadow-lg w-full sm:w-auto"
                 size="lg"
               >
                 <Play className="w-4 h-4" />
-                Executar
+                <span className="hidden sm:inline">Executar</span>
+                <span className="sm:hidden">▶</span>
               </Button>
             )}
           </>
