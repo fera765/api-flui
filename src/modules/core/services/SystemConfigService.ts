@@ -18,10 +18,7 @@ export class SystemConfigService implements ISystemConfigService {
     const config = await this.repository.findCurrent();
 
     if (!config) {
-      return {
-        endpoint: DEFAULT_ENDPOINT,
-        model: DEFAULT_MODEL,
-      };
+      throw new AppError('Configuration not found', 404);
     }
 
     return config.toJSON();
