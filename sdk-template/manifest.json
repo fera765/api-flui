@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "example-tool",
+  "version": "1.0.0",
+  "entry": "dist/index.js",
+  "type": "tool",
+  "description": "Example tool for TOR",
+  "capabilities": [],
+  "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string",
+        "description": "Input message"
+      }
+    },
+    "required": ["message"]
+  },
+  "outputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "result": {
+        "type": "string",
+        "description": "Result message"
+      },
+      "timestamp": {
+        "type": "number",
+        "description": "Processing timestamp"
+      }
+    },
+    "required": ["result", "timestamp"]
+  },
+  "compatibility": {
+    "coreMin": ">=1.0.0 <2.0.0"
+  }
+}

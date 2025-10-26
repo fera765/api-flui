@@ -2,238 +2,79 @@
 
 **Documentação Oficial do Sistema de Importação de Tools**
 
----
-
-## 🎯 Objetivo
-
-O **TOR (Tool Onboarding Registry)** é o sistema padronizado e seguro para importar, registrar e executar tools customizadas na plataforma de automação. 
-
-Ao invés de registrar tools manualmente via código, desenvolvedores agora:
-
-1. Desenvolvem tools usando o SDK template
-2. Executam `sdk build` para gerar um `.zip` padronizado
-3. Fazem upload do ZIP via `POST /api/tools/import`
-4. A tool é validada, registrada e executada em sandbox isolado
+**Versão:** 1.0.0  
+**Data:** 2025-10-26
 
 ---
 
-## 🏗️ Arquitetura
+## 🎯 Visão Geral
+
+O **TOR (Tool Onboarding Registry)** é o sistema padronizado e seguro para importar, registrar e executar tools customizadas na plataforma de automação.
+
+### O que é TOR?
+
+TOR substitui completamente o sistema antigo de registro de ferramentas, oferecendo:
+
+- ✅ **Simplicidade** - Desenvolva, builde um ZIP, faça upload
+- ✅ **Segurança** - Execução em sandbox isolado, validação de schemas
+- ✅ **Padronização** - Manifest obrigatório, estrutura consistente
+- ✅ **Isolamento** - Sem dependências do core no ambiente da ferramenta
+- ✅ **Auditoria** - Versionamento completo e rastreabilidade
+
+### Fluxo Completo
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  1. Developer Side (SDK)                            │
-│                                                     │
-│  sdk init → develop tool → sdk build → tool.zip    │
-└─────────────────┬───────────────────────────────────┘
-                  │
-                  │ Upload ZIP
-                  ▼
-┌─────────────────────────────────────────────────────┐
-│  2. Backend (TOR)                                   │
-│                                                     │
-│  ┌─────────────────────────────────────────────┐   │
-│  │ POST /api/tools/import                      │   │
-│  └──────────────┬──────────────────────────────┘   │
-│                 │                                   │
-│                 ▼                                   │
-│  ┌─────────────────────────────────────────────┐   │
-│  │ Zip Inspector                               │   │
-│  │ - Verifica estrutura                        │   │
-│  │ - Detecta arquivos maliciosos               │   │
-│  │ - Extrai manifest.json                      │   │
-│  └──────────────┬──────────────────────────────┘   │
-│                 │                                   │
-│                 ▼                                   │
-│  ┌─────────────────────────────────────────────┐   │
-│  │ Manifest Validator                          │   │
-│  │ - Valida schema                             │   │
-│  │ - Verifica outputSchema (obrigatório)       │   │
-│  │ - Valida capabilities                       │   │
-│  └──────────────┬──────────────────────────────┘   │
-│                 │                                   │
-│                 ▼                                   │
-│  ┌─────────────────────────────────────────────┐   │
-│  │ Tool Repository                             │   │
-│  │ - Cria registro                             │   │
-│  │ - Gerencia versões                          │   │
-│  └──────────────┬──────────────────────────────┘   │
-│                 │                                   │
-│                 ▼                                   │
-│  ┌─────────────────────────────────────────────┐   │
-│  │ Sandbox Manager                             │   │
-│  │ - Cria sandbox isolado                      │   │
-│  │ - Executa healthcheck                       │   │
-│  │ - Garante segurança                         │   │
-│  └─────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────┐
+│ 1. Desenvolver Tool │
+│    (SDK Template)   │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ 2. Build + Pack     │
+│    npm run sdk:build│
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ 3. Upload ZIP       │
+│    POST /api/tools  │
+│         /import     │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│ 4. Tool Ativa       │
+│    Pronta para uso  │
+└─────────────────────┘
 ```
 
 ---
 
-## 📋 Manifest.json (Contrato Obrigatório)
+## 🚀 Quick Start
 
-O `manifest.json` é o contrato entre a tool e a plataforma. **outputSchema é obrigatório**.
-
-### Schema Completo
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": ["name", "version", "entry", "type", "outputSchema"],
-  "properties": {
-    "name": {
-      "type": "string",
-      "description": "Nome único da tool (ex: acme-mytool)"
-    },
-    "version": {
-      "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Versão semver (ex: 1.0.0)"
-    },
-    "entry": {
-      "type": "string",
-      "description": "Caminho relativo para o entry point (ex: dist/index.js)"
-    },
-    "type": {
-      "type": "string",
-      "enum": ["tool"],
-      "description": "Tipo deve ser 'tool'"
-    },
-    "description": {
-      "type": "string",
-      "description": "Descrição curta da tool"
-    },
-    "capabilities": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "enum": ["network", "filesystem", "spawn", "env"]
-      },
-      "description": "Capabilities necessárias"
-    },
-    "inputSchema": {
-      "type": "object",
-      "description": "JSON Schema para validação de input (recomendado)"
-    },
-    "outputSchema": {
-      "type": "object",
-      "description": "JSON Schema para validação de output (OBRIGATÓRIO)"
-    },
-    "compatibility": {
-      "type": "object",
-      "properties": {
-        "coreMin": {
-          "type": "string",
-          "description": "Versão mínima do core (ex: >=1.0.0 <2.0.0)"
-        },
-        "coreMax": {
-          "type": "string"
-        }
-      }
-    }
-  }
-}
-```
-
-### Exemplo Prático
-
-```json
-{
-  "name": "acme-email-validator",
-  "version": "1.0.0",
-  "entry": "dist/index.js",
-  "type": "tool",
-  "description": "Validates email addresses with DNS check",
-  "capabilities": ["network"],
-  "inputSchema": {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "properties": {
-      "email": {
-        "type": "string",
-        "format": "email"
-      },
-      "checkDNS": {
-        "type": "boolean",
-        "default": false
-      }
-    },
-    "required": ["email"]
-  },
-  "outputSchema": {
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "type": "object",
-    "properties": {
-      "valid": {
-        "type": "boolean"
-      },
-      "domain": {
-        "type": "string"
-      },
-      "dnsValid": {
-        "type": "boolean"
-      }
-    },
-    "required": ["valid", "domain"]
-  },
-  "compatibility": {
-    "coreMin": ">=1.0.0 <2.0.0"
-  }
-}
-```
-
----
-
-## 📦 Estrutura do ZIP
-
-O comando `sdk build` deve produzir um ZIP com esta estrutura **estrita**:
-
-```
-tool-name-1.0.0.zip
-├── manifest.json          ✅ OBRIGATÓRIO
-├── dist/
-│   ├── index.js          ✅ Entry point
-│   ├── lib.js
-│   └── utils.js
-├── types/                 ⚠️ Opcional
-│   └── index.d.ts
-└── README-tool.md         ⚠️ Opcional
-```
-
-### ❌ Não Permitido
-
-- `node_modules/` completos (use bundler)
-- `.env`, `.env.local` (segredos)
-- `.exe`, `.bat`, `.sh`, `.cmd` (executáveis)
-- Arquivos > 50MB
-
----
-
-## 🚀 Fluxo de Build (Developer Side)
-
-### 1. Inicializar Projeto
+### 1. Criar Nova Tool
 
 ```bash
-# Usar template do SDK
-sdk init my-tool
-cd my-tool
+# Copiar template
+cp -r /workspace/sdk-template my-custom-tool
+cd my-custom-tool
 npm install
 ```
 
-### 2. Desenvolver Tool
+### 2. Desenvolver
 
 ```typescript
 // src/index.ts
-export async function handler(ctx: any, input: any) {
-  const { email } = input;
+export async function handler(ctx, input) {
+  ctx.logger.info('Processing...', input);
   
-  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const domain = email.split('@')[1] || '';
+  // Sua lógica aqui
+  const result = processData(input);
   
   return {
-    valid,
-    domain,
+    result,
+    timestamp: Date.now()
   };
 }
 ```
@@ -250,10 +91,9 @@ export async function handler(ctx: any, input: any) {
   "outputSchema": {
     "type": "object",
     "properties": {
-      "valid": { "type": "boolean" },
-      "domain": { "type": "string" }
+      "result": { "type": "string" }
     },
-    "required": ["valid", "domain"]
+    "required": ["result"]
   }
 }
 ```
@@ -261,14 +101,226 @@ export async function handler(ctx: any, input: any) {
 ### 4. Build e Pack
 
 ```bash
-# Build TypeScript
-npm run build
-
-# Pack tool (gera ZIP)
-sdk build
-
-# Output: build/my-tool-1.0.0.zip
+npm run sdk:build
+# Gera: build/my-tool-1.0.0.zip
 ```
+
+### 5. Import
+
+```bash
+curl -X POST "http://localhost:3000/api/tools/import" \
+  -F "file=@build/my-tool-1.0.0.zip"
+```
+
+**Resposta (sucesso):**
+```json
+{
+  "id": "tool-uuid-abc123",
+  "name": "my-tool",
+  "version": "1.0.0",
+  "status": "active"
+}
+```
+
+---
+
+## 📋 Manifest.json (Contrato)
+
+O `manifest.json` é o contrato obrigatório entre a tool e a plataforma.
+
+### Estrutura Completa
+
+```json
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "string",
+  "version": "string",
+  "entry": "string",
+  "type": "tool",
+  "description": "string",
+  "capabilities": ["string"],
+  "inputSchema": { /* JSON Schema */ },
+  "outputSchema": { /* JSON Schema */ },
+  "compatibility": {
+    "coreMin": "string",
+    "coreMax": "string"
+  }
+}
+```
+
+### Campos Obrigatórios
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `name` | string | Nome único da tool (ex: "acme-mytool") |
+| `version` | string | Versão semver (ex: "1.0.0") |
+| `entry` | string | Caminho para entry point (ex: "dist/index.js") |
+| `type` | "tool" | Sempre "tool" |
+| `outputSchema` | object | **JSON Schema do output (OBRIGATÓRIO!)** |
+
+### Campos Opcionais
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `description` | string | Descrição da tool |
+| `capabilities` | string[] | Permissões necessárias |
+| `inputSchema` | object | JSON Schema do input (recomendado) |
+| `compatibility` | object | Compatibilidade de versão |
+
+---
+
+## 🔑 Campos Detalhados
+
+### name
+
+```json
+{
+  "name": "acme-email-validator"
+}
+```
+
+- Deve ser único
+- Usar kebab-case
+- Sem espaços ou caracteres especiais
+- Máx 50 caracteres
+
+### version
+
+```json
+{
+  "version": "1.0.0"
+}
+```
+
+- Formato **semver** obrigatório
+- Formato: `MAJOR.MINOR.PATCH`
+- Exemplos válidos: "1.0.0", "2.3.1", "0.1.0"
+- Exemplos inválidos: "v1.0", "1.0", "1"
+
+### entry
+
+```json
+{
+  "entry": "dist/index.js"
+}
+```
+
+- Caminho relativo ao root do ZIP
+- Deve apontar para arquivo `.js`
+- Arquivo deve existir no ZIP
+
+### type
+
+```json
+{
+  "type": "tool"
+}
+```
+
+- Sempre `"tool"`
+- Outros tipos não são suportados
+
+### outputSchema (OBRIGATÓRIO!)
+
+```json
+{
+  "outputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "result": {
+        "type": "string",
+        "description": "Result message"
+      },
+      "timestamp": {
+        "type": "number",
+        "description": "Processing timestamp"
+      }
+    },
+    "required": ["result", "timestamp"]
+  }
+}
+```
+
+**IMPORTANTE:** `outputSchema` é **OBRIGATÓRIO**!
+
+Sem ele, sua tool será rejeitada.
+
+### inputSchema (Recomendado)
+
+```json
+{
+  "inputSchema": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "email": {
+        "type": "string",
+        "format": "email"
+      }
+    },
+    "required": ["email"]
+  }
+}
+```
+
+Embora opcional, é **altamente recomendado** para validação.
+
+### capabilities
+
+```json
+{
+  "capabilities": ["network", "filesystem"]
+}
+```
+
+Capabilities disponíveis:
+- `network` - HTTP requests, APIs externas
+- `filesystem` - Leitura/escrita de arquivos no sandbox
+- `spawn` - Executar processos filhos
+- `env` - Acessar variáveis de ambiente
+
+### compatibility
+
+```json
+{
+  "compatibility": {
+    "coreMin": ">=1.0.0 <2.0.0",
+    "coreMax": "2.0.0"
+  }
+}
+```
+
+Define compatibilidade com versões do core.
+
+---
+
+## 📦 Estrutura do ZIP
+
+O comando `npm run pack` gera um ZIP com esta estrutura **obrigatória**:
+
+```
+tool-name-1.0.0.zip
+├── manifest.json      ✅ OBRIGATÓRIO
+├── dist/
+│   └── index.js      ✅ Entry point
+└── README-tool.md    ⚠️  Opcional
+```
+
+### Regras do ZIP
+
+**✅ Permitido:**
+- `manifest.json` na raiz
+- Pasta `dist/` com código buildado
+- `README-tool.md` (opcional)
+- Arquivos `.d.ts` (types)
+
+**❌ Proibido:**
+- `node_modules/` (use bundler)
+- `.env`, `.env.local` (secrets)
+- `.exe`, `.bat`, `.sh`, `.cmd` (executáveis)
+- Arquivos > 50MB
+- `.git/` (versionamento)
 
 ---
 
@@ -281,7 +333,7 @@ Importa uma tool via ZIP.
 **Request:**
 ```bash
 curl -X POST "http://localhost:3000/api/tools/import" \
-  -F "file=@./build/my-tool-1.0.0.zip" \
+  -F "file=@tool.zip" \
   -F "overwrite=false"
 ```
 
@@ -326,9 +378,11 @@ curl -X POST "http://localhost:3000/api/tools/import" \
 }
 ```
 
+---
+
 ### GET /api/tools
 
-Lista todas as tools.
+Lista todas as tools importadas.
 
 **Response (200):**
 ```json
@@ -341,16 +395,18 @@ Lista todas as tools.
       "status": "active",
       "description": "Email validator",
       "capabilities": ["network"],
-      "createdAt": "2025-10-25T10:00:00Z"
+      "createdAt": "2025-10-26T10:00:00Z"
     }
   ],
   "total": 1
 }
 ```
 
+---
+
 ### GET /api/tools/:id
 
-Detalhes de uma tool.
+Detalhes de uma tool específica.
 
 **Response (200):**
 ```json
@@ -358,17 +414,19 @@ Detalhes de uma tool.
   "id": "tool-123",
   "name": "my-tool",
   "version": "1.0.0",
-  "manifest": { ... },
+  "manifest": { /* manifest completo */ },
   "status": "active",
   "sandboxPath": "/tmp/tools-sandbox/my-tool-1.0.0",
-  "createdAt": "2025-10-25T10:00:00Z",
-  "updatedAt": "2025-10-25T10:00:05Z"
+  "createdAt": "2025-10-26T10:00:00Z",
+  "updatedAt": "2025-10-26T10:00:05Z"
 }
 ```
 
+---
+
 ### GET /api/tools/versions/:name
 
-Lista versões de uma tool.
+Lista todas as versões de uma tool.
 
 **Response (200):**
 ```json
@@ -379,18 +437,20 @@ Lista versões de uma tool.
       "id": "tool-456",
       "version": "2.0.0",
       "status": "active",
-      "createdAt": "2025-10-26T10:00:00Z"
+      "createdAt": "2025-10-27T10:00:00Z"
     },
     {
       "id": "tool-123",
       "version": "1.0.0",
       "status": "inactive",
-      "createdAt": "2025-10-25T10:00:00Z"
+      "createdAt": "2025-10-26T10:00:00Z"
     }
   ],
   "total": 2
 }
 ```
+
+---
 
 ### DELETE /api/tools/:id
 
@@ -400,11 +460,11 @@ Remove uma tool.
 
 ---
 
-## 🔒 Segurança
+## 🔐 Segurança
 
 ### Capability Model
 
-Tools declaram capabilities no manifest. O host verifica antes de executar.
+Tools declaram capabilities no manifest. O TOR verifica antes de executar.
 
 ```json
 {
@@ -412,11 +472,12 @@ Tools declaram capabilities no manifest. O host verifica antes de executar.
 }
 ```
 
-**Capabilities disponíveis:**
-- `network` - Fazer requests HTTP/HTTPS
-- `filesystem` - Ler/escrever arquivos no sandbox
-- `spawn` - Executar processos filhos
-- `env` - Acessar variáveis de ambiente
+**Verificação:**
+```typescript
+if (tool.capabilities.includes('network') && !context.allowedCapabilities.network) {
+  throw new Error('Capability network is required but not allowed');
+}
+```
 
 ### Sandbox Execution
 
@@ -430,13 +491,14 @@ Todas as tools executam em sandboxes isolados:
 
 ### Security Checks
 
-Durante import:
+Durante import, TOR executa:
 
 1. ✅ Rejeita `.env`, `.exe`, `.bat`, `.sh`
 2. ✅ Rejeita `node_modules` grandes
-3. ✅ Valida manifest.json
-4. ✅ Verifica outputSchema obrigatório
+3. ✅ Valida `manifest.json`
+4. ✅ Verifica `outputSchema` obrigatório
 5. ✅ Calcula hash SHA256 para auditoria
+6. ✅ Executa healthcheck (opcional)
 
 ---
 
@@ -444,29 +506,29 @@ Durante import:
 
 ### Política de Versões
 
-- Cada `(name, version)` é único
-- Versões seguem **semver** (ex: `1.0.0`)
+- Cada `(name, version)` é **único**
+- Versões seguem **semver**
 - Novas versões coexistem com antigas
 - Use `overwrite=true` para substituir mesma versão
 
-### Exemplo de Versionamento
+### Exemplos
 
 ```bash
-# V1 - Primeira versão
+# Primeira versão
 curl -F "file=@my-tool-1.0.0.zip" /api/tools/import
 # → Cria my-tool@1.0.0
 
-# V2 - Nova versão
+# Nova versão
 curl -F "file=@my-tool-2.0.0.zip" /api/tools/import
-# → Cria my-tool@2.0.0 (V1 continua disponível)
+# → Cria my-tool@2.0.0 (v1 continua disponível)
 
-# Atualizar V1
+# Atualizar v1
 curl -F "file=@my-tool-1.0.0.zip" -F "overwrite=true" /api/tools/import
 # → Substitui my-tool@1.0.0
 
-# Conflito
+# Conflito sem overwrite
 curl -F "file=@my-tool-1.0.0.zip" /api/tools/import
-# → 409 Conflict (já existe)
+# → 409 Conflict
 ```
 
 ---
@@ -477,9 +539,9 @@ curl -F "file=@my-tool-1.0.0.zip" /api/tools/import
 
 **Causa:** ZIP não contém `manifest.json` na raiz.
 
-**Solução:** 
+**Solução:**
 ```bash
-# Verificar estrutura do ZIP
+# Verificar estrutura
 unzip -l my-tool.zip
 
 # Deve mostrar:
@@ -509,10 +571,9 @@ unzip -l my-tool.zip
 **Causa:** `entry` no manifest aponta para arquivo inexistente.
 
 **Solução:**
-```json
-{
-  "entry": "dist/index.js"  // ← Deve existir no ZIP
-}
+```bash
+# Verificar se arquivo existe
+unzip -l my-tool.zip | grep "dist/index.js"
 ```
 
 ### Erro: "Version is not valid semver"
@@ -527,19 +588,13 @@ unzip -l my-tool.zip
 }
 ```
 
-### Erro: "Capability 'xyz' is not allowed"
-
-**Causa:** Tool pede capability não permitida pelo host.
-
-**Solução:** Remover capability do manifest ou solicitar permissão ao administrador.
-
 ### Erro: "ZIP file too large"
 
 **Causa:** ZIP > 50MB.
 
-**Solução:** 
-- Use bundler (webpack, esbuild) para reduzir tamanho
-- Não inclua `node_modules` completos
+**Solução:**
+- Use bundler (webpack, esbuild)
+- Não inclua `node_modules`
 - Remova arquivos desnecessários
 
 ---
@@ -551,12 +606,13 @@ unzip -l my-tool.zip
 **Tool Code:**
 ```typescript
 // src/index.ts
-export async function handler(ctx: any, input: any) {
+export async function handler(ctx, input) {
   const { email } = input;
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  
   return {
     valid,
-    domain: email.split('@')[1] || '',
+    domain: email.split('@')[1] || ''
   };
 }
 ```
@@ -585,6 +641,8 @@ curl -F "file=@email-validator-1.0.0.zip" \
   http://localhost:3000/api/tools/import
 ```
 
+---
+
 ### Exemplo 2: HTTP Fetcher (com capability)
 
 **Tool Code:**
@@ -592,14 +650,14 @@ curl -F "file=@email-validator-1.0.0.zip" \
 // src/index.ts
 import fetch from 'node-fetch';
 
-export async function handler(ctx: any, input: any) {
+export async function handler(ctx, input) {
   const { url } = input;
   const response = await fetch(url);
   const data = await response.json();
   
   return {
     status: response.status,
-    data,
+    data
   };
 }
 ```
@@ -625,66 +683,6 @@ export async function handler(ctx: any, input: any) {
 
 ---
 
-## 📊 Códigos HTTP
-
-| Código | Significado | Quando |
-|--------|-------------|--------|
-| 201 | Created | Import bem-sucedido |
-| 200 | OK | GET, listagens |
-| 204 | No Content | DELETE bem-sucedido |
-| 400 | Bad Request | Manifest/schema inválido |
-| 409 | Conflict | Tool já existe (sem overwrite) |
-| 422 | Unprocessable | Healthcheck falhou |
-| 404 | Not Found | Tool não encontrada |
-| 500 | Internal Error | Erro no servidor |
-
----
-
-## 🔍 Auditoria
-
-Cada import gera logs com:
-
-- ✅ User ID (se autenticado)
-- ✅ IP address
-- ✅ Timestamp
-- ✅ Tool name + version
-- ✅ SHA256 hash do ZIP
-- ✅ Resultado (success/failure)
-
-**Exemplo de log:**
-```
-[2025-10-25T10:00:00Z] TOOL_IMPORT
-  user: user-123
-  ip: 192.168.1.100
-  tool: email-validator@1.0.0
-  hash: abc123def456...
-  status: success
-```
-
----
-
-## 📈 Roadmap
-
-### Implementado ✅
-- [x] Manifest validation
-- [x] ZIP inspection
-- [x] Sandbox isolation
-- [x] Capability model
-- [x] Versioning
-- [x] API endpoints
-- [x] Healthcheck
-
-### Planejado 🔮
-- [ ] Assinatura digital de ZIPs
-- [ ] Antivirus scan
-- [ ] Tool marketplace
-- [ ] Metrics & monitoring
-- [ ] Hot reload
-- [ ] Tool dependencies
-- [ ] Custom runtimes (Python, Go)
-
----
-
 ## 💡 Best Practices
 
 ### 1. Sempre use outputSchema
@@ -701,13 +699,13 @@ Cada import gera logs com:
   }
 }
 
-// ❌ Ruim - rejeitado
+// ❌ Ruim - será rejeitado
 {
   // Sem outputSchema
 }
 ```
 
-### 2. Declare só as capabilities necessárias
+### 2. Declare só capabilities necessárias
 
 ```json
 // ✅ Bom - só o que precisa
@@ -732,34 +730,87 @@ Cada import gera logs com:
 ### 4. Bundle suas dependências
 
 ```bash
-# Use webpack, esbuild ou similar
-npm run build # → Gera dist/ com tudo bundled
+# Use bundler
+npm install --save-dev tsup
+npm run build  # Gera dist/ bundled
 ```
 
 ### 5. Teste localmente antes de importar
 
 ```bash
-# Testar build
+# Build
 npm run build
+
+# Test
 node dist/index.js
 
-# Testar ZIP
+# Validate ZIP
 unzip -l build/my-tool-1.0.0.zip
-
-# Validar manifest
-cat manifest.json | jq .
 ```
+
+---
+
+## 📊 Códigos HTTP
+
+| Código | Significado | Quando |
+|--------|-------------|--------|
+| 201 | Created | Import bem-sucedido |
+| 200 | OK | GET, listagens |
+| 204 | No Content | DELETE bem-sucedido |
+| 400 | Bad Request | Manifest/schema inválido |
+| 409 | Conflict | Tool já existe (sem overwrite) |
+| 422 | Unprocessable | Healthcheck falhou |
+| 404 | Not Found | Tool não encontrada |
+| 500 | Internal Error | Erro no servidor |
+
+---
+
+## 🔍 Auditoria
+
+Cada import gera logs completos:
+
+```
+[2025-10-26T10:00:00Z] TOOL_IMPORT
+  user: user-123
+  ip: 192.168.1.100
+  tool: email-validator@1.0.0
+  hash: abc123def456...
+  status: success
+  warnings: []
+```
+
+---
+
+## 📈 Roadmap
+
+### Implementado ✅
+- [x] Manifest validation
+- [x] ZIP inspection
+- [x] Sandbox isolation
+- [x] Capability model
+- [x] Versionamento
+- [x] API endpoints
+- [x] Healthcheck
+
+### Planejado 🔮
+- [ ] Assinatura digital de ZIPs
+- [ ] Antivirus scan
+- [ ] Tool marketplace
+- [ ] Metrics & monitoring
+- [ ] Hot reload
+- [ ] Tool dependencies
+- [ ] Custom runtimes (Python, Go)
 
 ---
 
 ## 🆘 Suporte
 
 **Documentação:**
-- SDK README: `/sdk/README.md`
-- API Docs: `/docs/api.md`
+- SDK Template: `/workspace/sdk-template/README.md`
+- TOR Docs: Este arquivo
 
 **Issues:**
-- GitHub Issues: https://github.com/your-org/automation-platform/issues
+- GitHub: https://github.com/your-org/automation-platform/issues
 
 **Community:**
 - Discord: https://discord.gg/automation

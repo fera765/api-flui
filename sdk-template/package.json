@@ -1,0 +1,19 @@
+{
+  "name": "@your-org/tool-template",
+  "version": "1.0.0",
+  "description": "SDK Template for Tool Onboarding Registry (TOR)",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --out-dir dist",
+    "pack": "node scripts/pack.js",
+    "sdk:build": "npm run build && npm run pack"
+  },
+  "keywords": ["automation", "tool", "tor"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3",
+    "adm-zip": "^0.5.10"
+  }
+}
