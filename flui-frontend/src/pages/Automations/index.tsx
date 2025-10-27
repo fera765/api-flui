@@ -115,6 +115,16 @@ const Automations = () => {
           type: node.type as CustomNodeData['type'],
           description: JSON.stringify(node.config),
           isFirst: index === 0,
+          toolId: node.referenceId,
+          config: node.config || {},
+          inputSchema: {
+            type: 'object',
+            properties: {},
+          },
+          outputSchema: {
+            type: 'object',
+            properties: {},
+          },
         },
       }));
 
@@ -178,16 +188,35 @@ const Automations = () => {
         type: node.data.type === 'trigger' ? NodeType.TRIGGER : 
               node.data.type === 'agent' ? NodeType.AGENT :
               node.data.type === 'condition' ? NodeType.CONDITION : NodeType.TOOL,
-        referenceId: node.id, // This should be the actual tool/agent ID
-        config: {},
+        referenceId: node.data.toolId || node.id,
+        config: node.data.config || {},
       }));
 
-      const backendLinks: LinkData[] = edges.map((edge) => ({
-        fromNodeId: edge.source!,
-        fromOutputKey: 'output',
-        toNodeId: edge.target!,
-        toInputKey: 'input',
-      }));
+      // Build links from edges and linkedFields
+      const backendLinks: LinkData[] = [];
+      
+      // Add visual connections
+      edges.forEach((edge) => {
+        backendLinks.push({
+          fromNodeId: edge.source!,
+          fromOutputKey: 'output',
+          toNodeId: edge.target!,
+          toInputKey: 'input',
+        });
+      });
+
+      // Add data links (linkedFields)
+      nodes.forEach((node) => {
+        const linkedFields = (node.data as any).linkedFields || {};
+        Object.entries(linkedFields).forEach(([inputKey, link]: [string, any]) => {
+          backendLinks.push({
+            fromNodeId: link.sourceNodeId,
+            fromOutputKey: link.outputKey,
+            toNodeId: node.id,
+            toInputKey: inputKey,
+          });
+        });
+      });
 
       const payload = {
         name: name.trim(),

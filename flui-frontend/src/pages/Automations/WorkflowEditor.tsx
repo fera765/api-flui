@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo } from 'react';
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -114,6 +114,8 @@ export function WorkflowEditor({
   const [nodes, setNodes, onNodesChange] = useNodesState<CustomNodeData>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [modalOpen, setModalOpen] = useState(false);
+  const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [currentConfigNode, setCurrentConfigNode] = useState<NodeConfigData | null>(null);
   const nodeIdCounter = useRef(1);
   const { toast } = useToast();
 
@@ -133,9 +135,112 @@ export function WorkflowEditor({
     };
   }, [nodes]);
 
+  const handleConfigure = useCallback((nodeId: string) => {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    setCurrentConfigNode({
+      nodeId: node.id,
+      nodeName: node.data.label,
+      config: node.data.config || {},
+      inputSchema: node.data.inputSchema,
+      outputSchema: node.data.outputSchema,
+      linkedFields: (node.data as any).linkedFields || {},
+    });
+    setConfigModalOpen(true);
+  }, [nodes]);
+
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter(n => n.id !== nodeId));
+    setEdges((eds) => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
+    toast({
+      title: 'Nó removido',
+      description: 'O nó foi removido do workflow',
+    });
+  }, [setNodes, setEdges, toast]);
+
+  const handleSaveConfig = useCallback((nodeId: string, config: Record<string, any>, linkedFields: Record<string, LinkedField>) => {
+    setNodes((nds) =>
+      nds.map((node) =>
+        node.id === nodeId
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                config,
+                linkedFields,
+              } as CustomNodeData,
+            }
+          : node
+      )
+    );
+  }, [setNodes]);
+
+  const availableOutputs: AvailableOutput[] = useMemo(() => {
+    if (!currentConfigNode) return [];
+
+    const currentNodeIndex = nodes.findIndex(n => n.id === currentConfigNode.nodeId);
+    if (currentNodeIndex === -1) return [];
+
+    // Get all nodes before the current one
+    const previousNodes = nodes.slice(0, currentNodeIndex);
+
+    return previousNodes.map(node => ({
+      nodeId: node.id,
+      nodeName: node.data.label,
+      outputs: getNodeOutputs(node),
+    }));
+  }, [nodes, currentConfigNode]);
+
+  const getNodeOutputs = (node: Node<CustomNodeData>) => {
+    const schema = node.data.outputSchema?.properties || {};
+    return Object.entries(schema).map(([key, value]: [string, any]) => ({
+      key,
+      type: value.type || 'string',
+      value: node.data.config?.[key],
+    }));
+  };
+
+  // Inject callbacks into existing nodes
+  useEffect(() => {
+    if (initialNodes.length > 0) {
+      setNodes((nds) =>
+        nds.map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            onConfigure: handleConfigure,
+            onDelete: handleDeleteNode,
+          },
+        }))
+      );
+    }
+  }, [initialNodes.length])
+
   const handleAddTool = useCallback((tool: ToolItem) => {
     const newNodeId = `node-${nodeIdCounter.current++}`;
     const position = getNewNodePosition();
+
+    // Mock input/output schemas - in production, fetch from API
+    const mockInputSchema = {
+      type: 'object',
+      properties: {
+        url: { type: 'string', description: 'URL para a requisição' },
+        method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'DELETE'] },
+        headers: { type: 'object' },
+        body: { type: 'string' },
+      },
+      required: ['url', 'method'],
+    };
+
+    const mockOutputSchema = {
+      type: 'object',
+      properties: {
+        status: { type: 'number' },
+        data: { type: 'object' },
+        error: { type: 'string' },
+      },
+    };
 
     const newNode: Node<CustomNodeData> = {
       id: newNodeId,
@@ -147,6 +252,12 @@ export function WorkflowEditor({
         subtype: tool.subtype,
         description: tool.description,
         isFirst: nodes.length === 0,
+        toolId: tool.id,
+        config: {},
+        inputSchema: mockInputSchema,
+        outputSchema: mockOutputSchema,
+        onConfigure: handleConfigure,
+        onDelete: handleDeleteNode,
       },
     };
 
@@ -304,6 +415,15 @@ export function WorkflowEditor({
         onClose={() => setModalOpen(false)}
         onSelectTool={handleAddTool}
         showOnlyTriggers={!hasTrigger}
+      />
+
+      {/* Node Config Modal */}
+      <NodeConfigModal
+        open={configModalOpen}
+        onClose={() => setConfigModalOpen(false)}
+        nodeData={currentConfigNode}
+        availableOutputs={availableOutputs}
+        onSave={handleSaveConfig}
       />
 
       {/* Empty State */}
