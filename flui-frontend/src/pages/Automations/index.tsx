@@ -171,9 +171,43 @@ const Automations = () => {
   const handleBasicInfoSave = async () => {
     if (!validateForm()) return;
 
-    // Open workflow editor after saving basic info
-    setDialogOpen(false);
-    openWorkflowEditor(editingAutomation);
+    try {
+      setSaving(true);
+
+      // If creating a new automation, save it to backend first to get an ID
+      if (!editingAutomation) {
+        const newAutomation = await createAutomation({
+          name,
+          description,
+          nodes: [],
+          links: [],
+          status: AutomationStatus.INACTIVE,
+        });
+
+        setEditingAutomation(newAutomation);
+        toast({
+          title: 'Automação criada',
+          description: 'Agora você pode adicionar tools ao workflow',
+        });
+        
+        // Open workflow editor with the new automation ID
+        setDialogOpen(false);
+        openWorkflowEditor(newAutomation);
+      } else {
+        // If editing, just open the workflow editor
+        setDialogOpen(false);
+        openWorkflowEditor(editingAutomation);
+      }
+    } catch (error: any) {
+      console.error('Error creating automation:', error);
+      toast({
+        title: 'Erro ao criar automação',
+        description: error.response?.data?.error || error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleWorkflowSave = async (nodes: Node<CustomNodeData>[], edges: Edge[]) => {
