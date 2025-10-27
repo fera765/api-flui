@@ -194,6 +194,16 @@ export function WorkflowEditor({
     );
   }, [setNodes]);
 
+  // Helper function to get outputs from a node (must be defined before useMemo)
+  const getNodeOutputs = useCallback((node: Node<CustomNodeData>) => {
+    const schema = node.data.outputSchema?.properties || {};
+    return Object.entries(schema).map(([key, value]: [string, any]) => ({
+      key,
+      type: value.type || 'string',
+      value: node.data.config?.[key],
+    }));
+  }, []);
+
   const availableOutputs: AvailableOutput[] = useMemo(() => {
     if (!currentConfigNode) return [];
 
@@ -208,16 +218,7 @@ export function WorkflowEditor({
       nodeName: node.data.label,
       outputs: getNodeOutputs(node),
     }));
-  }, [nodes, currentConfigNode]);
-
-  const getNodeOutputs = (node: Node<CustomNodeData>) => {
-    const schema = node.data.outputSchema?.properties || {};
-    return Object.entries(schema).map(([key, value]: [string, any]) => ({
-      key,
-      type: value.type || 'string',
-      value: node.data.config?.[key],
-    }));
-  };
+  }, [nodes, currentConfigNode, getNodeOutputs]);
 
   // Inject callbacks into existing nodes only once on mount
   useEffect(() => {
