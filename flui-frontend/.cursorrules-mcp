@@ -1,0 +1,76 @@
+# Configuração MCP para Cursor
+
+Este projeto está configurado com Playwright MCP (Model Context Protocol).
+
+## Servidor MCP Configurado
+
+O servidor MCP do Playwright permite que o Cursor AI controle o navegador diretamente para testes e inspeção do frontend.
+
+### Como Usar no Cursor
+
+1. **Iniciar o servidor MCP:**
+   ```bash
+   cd flui-frontend
+   npm run mcp:server
+   ```
+
+2. **Configurar o Cursor:**
+   - Abra as configurações do Cursor
+   - Vá para "Model Context Protocol"
+   - Adicione o servidor Playwright:
+     - Nome: `playwright-flui`
+     - Comando: `npx mcp-server-playwright`
+     - Diretório de trabalho: `/workspace/flui-frontend`
+
+3. **Usar no Cursor:**
+   - O Cursor poderá controlar o navegador
+   - Executar testes automaticamente
+   - Capturar logs e erros
+   - Inspecionar elementos da página
+
+### Comandos Disponíveis via MCP
+
+- `playwright.navigate(url)` - Navegar para URL
+- `playwright.click(selector)` - Clicar em elemento
+- `playwright.fill(selector, text)` - Preencher campo
+- `playwright.screenshot()` - Capturar screenshot
+- `playwright.getLogs()` - Obter logs do console
+- `playwright.getNetworkRequests()` - Obter requisições
+
+### Configuração do MCP Server
+
+Arquivo: `mcp-server.config.json`
+
+```json
+{
+  "playwright": {
+    "baseURL": "http://localhost:5173",
+    "headless": true,
+    "browser": "chromium"
+  },
+  "logging": {
+    "captureConsole": true,
+    "captureNetwork": true,
+    "captureErrors": true
+  }
+}
+```
+
+### Testes Disponíveis
+
+Execute testes E2E com:
+```bash
+npm test                  # Todos os testes
+npm run test:ui           # Interface UI
+npm run test:headed       # Ver navegador
+npm run test:debug        # Modo debug
+```
+
+### Fixtures Personalizadas
+
+- `pageWithLogging` - Página com captura de logs
+- `capturedLogs` - Objeto com logs capturados
+- `MCPLogAnalyzer` - Analisador de logs
+- `MCPPageHelper` - Helpers para página
+
+Veja `PLAYWRIGHT_MCP_GUIDE.md` para documentação completa.

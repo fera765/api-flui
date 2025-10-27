@@ -1,0 +1,48 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/playwright-mcp/main/config.schema.json",
+  "name": "Flui Frontend MCP Server",
+  "description": "Playwright MCP Server para testes do frontend da aplicação Flui",
+  "version": "1.0.0",
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "mcp-server-playwright"
+      ],
+      "env": {
+        "NODE_ENV": "test",
+        "PLAYWRIGHT_BROWSERS_PATH": "0"
+      }
+    }
+  },
+  "playwright": {
+    "baseURL": "http://localhost:5173",
+    "headless": true,
+    "browser": "chromium",
+    "launchOptions": {
+      "args": [
+        "--disable-dev-shm-usage",
+        "--no-sandbox",
+        "--disable-setuid-sandbox"
+      ]
+    },
+    "contextOptions": {
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "recordVideo": {
+        "dir": "./test-results/videos"
+      },
+      "recordHar": {
+        "path": "./test-results/network.har"
+      }
+    }
+  },
+  "logging": {
+    "level": "info",
+    "captureConsole": true,
+    "captureNetwork": true,
+    "captureErrors": true
+  }
+}
