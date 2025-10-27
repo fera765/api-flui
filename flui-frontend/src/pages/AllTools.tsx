@@ -5,17 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Wrench, Search, Package, Bot, Cpu } from 'lucide-react';
+import { Loader2, Wrench, Search, Package, Bot, Cpu, GitBranch } from 'lucide-react';
 import { getAllTools, searchTools, type AllToolsResponse } from '@/api/tools';
+import { getAllConditionTools, type ConditionTool } from '@/api/conditions';
 import { useToast } from '@/hooks/use-toast';
 
 const AllTools = () => {
   const [toolsData, setToolsData] = useState<AllToolsResponse | null>(null);
+  const [conditionTools, setConditionTools] = useState<ConditionTool[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any>(null);
   const [searching, setSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'system' | 'mcp' | 'agent'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'system' | 'mcp' | 'agent' | 'condition'>('all');
   
   const { toast } = useToast();
 
@@ -39,8 +41,12 @@ const AllTools = () => {
   const loadTools = async () => {
     try {
       setLoading(true);
-      const data = await getAllTools();
+      const [data, conditions] = await Promise.all([
+        getAllTools(),
+        getAllConditionTools()
+      ]);
       setToolsData(data);
+      setConditionTools(conditions);
     } catch (error: any) {
       console.error('Error loading tools:', error);
       toast({
@@ -113,6 +119,10 @@ const AllTools = () => {
                 {toolsData.summary.systemTools} System
               </Badge>
               <Badge variant="outline" className="gap-1">
+                <GitBranch className="w-3 h-3" />
+                {conditionTools.length} Conditions
+              </Badge>
+              <Badge variant="outline" className="gap-1">
                 <Package className="w-3 h-3" />
                 {toolsData.summary.mcpTools} MCP
               </Badge>
@@ -122,7 +132,7 @@ const AllTools = () => {
               </Badge>
               <Badge className="gap-1">
                 <Wrench className="w-3 h-3" />
-                {toolsData.summary.totalTools} Total
+                {toolsData.summary.totalTools + conditionTools.length} Total
               </Badge>
             </div>
           )}
@@ -165,7 +175,7 @@ const AllTools = () => {
         ) : (
           /* Tabs by Category */
           <Tabs value={activeTab} onValueChange={handleTabChange}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="all" className="gap-2">
                 <Wrench className="w-4 h-4" />
                 Todas
@@ -173,6 +183,10 @@ const AllTools = () => {
               <TabsTrigger value="system" className="gap-2">
                 <Cpu className="w-4 h-4" />
                 System
+              </TabsTrigger>
+              <TabsTrigger value="condition" className="gap-2">
+                <GitBranch className="w-4 h-4" />
+                Conditions
               </TabsTrigger>
               <TabsTrigger value="mcp" className="gap-2">
                 <Package className="w-4 h-4" />
@@ -210,6 +224,18 @@ const AllTools = () => {
                     />
                   ))}
 
+                  {/* Condition Tools */}
+                  {conditionTools.length > 0 && (
+                    <ToolSection
+                      title="Condition Tools"
+                      subtitle="Tools de roteamento condicional"
+                      icon={<GitBranch className="w-5 h-5" />}
+                      tools={conditionTools}
+                      badge={`${conditionTools.length} conditions`}
+                      badgeVariant="secondary"
+                    />
+                  )}
+
                   {/* Agent Tools */}
                   {toolsData.tools.agents.map((agentGroup) => (
                     <ToolSection
@@ -223,7 +249,7 @@ const AllTools = () => {
                     />
                   ))}
 
-                  {toolsData.summary.totalTools === 0 && (
+                  {toolsData.summary.totalTools === 0 && conditionTools.length === 0 && (
                     <EmptyState message="Nenhuma tool disponível. Adicione MCPs ou System Tools para começar." />
                   )}
                 </>
@@ -256,6 +282,52 @@ const AllTools = () => {
                     badge={`${mcpGroup.toolsCount} tools`}
                   />
                 ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="condition" className="space-y-6 mt-6">
+              {conditionTools.length === 0 ? (
+                <EmptyState message="Nenhuma Condition Tool criada. Crie conditions via API para roteamento condicional." />
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {conditionTools.map((condition) => (
+                    <Card key={condition.id} className="hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                              <GitBranch className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-base">{condition.name}</CardTitle>
+                              <Badge variant="secondary" className="mt-1 text-xs">
+                                {condition.conditions.length} conditions
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                        {condition.description && (
+                          <CardDescription className="mt-2">{condition.description}</CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2 text-sm">
+                          {condition.conditions.slice(0, 3).map((cond, idx) => (
+                            <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                              {cond.name}
+                            </div>
+                          ))}
+                          {condition.conditions.length > 3 && (
+                            <div className="text-xs text-muted-foreground">
+                              +{condition.conditions.length - 3} mais...
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               )}
             </TabsContent>
 

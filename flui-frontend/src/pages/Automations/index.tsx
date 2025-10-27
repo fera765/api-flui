@@ -100,34 +100,51 @@ const Automations = () => {
     setDialogOpen(true);
   };
 
-  const openWorkflowEditor = (automation?: Automation) => {
+  const openWorkflowEditor = async (automation?: Automation) => {
     if (automation) {
       setEditingAutomation(automation);
       setName(automation.name);
       setDescription(automation.description || '');
       
+      // Import getToolById
+      const { getToolById } = await import('@/api/tools');
+      
       // Convert backend nodes/links to React Flow format
-      const flowNodes: Node<CustomNodeData>[] = automation.nodes.map((node, index) => ({
-        id: node.id,
-        type: 'custom',
-        position: { x: index * 350 + 100, y: 250 },
-        data: {
-          label: `Node ${index + 1}`,
-          type: node.type as CustomNodeData['type'],
-          description: JSON.stringify(node.config),
-          isFirst: index === 0,
-          toolId: node.referenceId,
-          config: node.config || {},
-          inputSchema: {
-            type: 'object',
-            properties: {},
-          },
-          outputSchema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-      }));
+      // Fetch tool data for each node to get proper schemas
+      const flowNodes: Node<CustomNodeData>[] = await Promise.all(
+        automation.nodes.map(async (node, index) => {
+          let toolData = null;
+          let inputSchema = { type: 'object', properties: {} };
+          let outputSchema = { type: 'object', properties: {} };
+          
+          // Try to fetch tool data if we have a referenceId
+          if (node.referenceId) {
+            try {
+              toolData = await getToolById(node.referenceId);
+              inputSchema = toolData.inputSchema || inputSchema;
+              outputSchema = toolData.outputSchema || outputSchema;
+            } catch (error) {
+              console.warn(`Failed to load tool data for ${node.referenceId}:`, error);
+            }
+          }
+          
+          return {
+            id: node.id,
+            type: 'custom',
+            position: { x: index * 350 + 100, y: 250 },
+            data: {
+              label: toolData?.name || `Node ${index + 1}`,
+              type: node.type as CustomNodeData['type'],
+              description: toolData?.description || '',
+              isFirst: index === 0,
+              toolId: node.referenceId,
+              config: node.config || {},
+              inputSchema,
+              outputSchema,
+            },
+          };
+        })
+      );
 
       const flowEdges: Edge[] = automation.links.map((link) => ({
         id: `edge-${link.fromNodeId}-${link.toNodeId}`,
