@@ -69,8 +69,8 @@ export function LinkerPopover({
           Linker
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0 flex flex-col max-h-[400px]" align="end" sideOffset={5}>
-        <div className="p-3 border-b bg-background flex-shrink-0">
+      <PopoverContent className="w-80 p-0" align="end" sideOffset={5}>
+        <div className="p-3 border-b bg-background">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -82,8 +82,8 @@ export function LinkerPopover({
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="p-2" style={{ minHeight: '100px' }}>
+        <div className="max-h-[300px] overflow-y-auto">
+          <div className="p-2">
             {filteredOutputs.length === 0 ? (
               <div className="text-center py-8 px-4 text-sm text-muted-foreground">
                 {compatibleOutputs.length === 0 ? (
@@ -147,7 +147,7 @@ export function LinkerPopover({
               </>
             )}
           </div>
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );

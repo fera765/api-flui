@@ -62,6 +62,15 @@ const getNodeConfig = (type: CustomNodeData['type']) => {
         iconColor: 'text-pink-600 dark:text-pink-400',
         badgeColor: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
       };
+    default:
+      // Fallback para tipos desconhecidos
+      return {
+        icon: Wrench,
+        bgGradient: 'from-gray-500/20 to-gray-600/20',
+        borderColor: 'border-gray-500/50',
+        iconColor: 'text-gray-600 dark:text-gray-400',
+        badgeColor: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300',
+      };
   }
 };
 

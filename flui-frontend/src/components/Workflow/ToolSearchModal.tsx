@@ -81,9 +81,19 @@ export function ToolSearchModal({
   const allToolItems = useMemo((): ToolItem[] => {
     const items: ToolItem[] = [];
 
-    // System Tools
+    // System Tools (filtrar webhooks duplicados)
+    const seenWebhooks = new Set<string>();
     systemTools.forEach(tool => {
       const isTrigger = tool.type === 'trigger';
+      
+      // Se for webhook, só adicionar o primeiro (genérico)
+      if (tool.name === 'WebHookTrigger') {
+        if (seenWebhooks.has('WebHookTrigger')) {
+          return; // Skip duplicados
+        }
+        seenWebhooks.add('WebHookTrigger');
+      }
+      
       if (!showOnlyTriggers || isTrigger) {
         items.push({
           id: tool.id,
