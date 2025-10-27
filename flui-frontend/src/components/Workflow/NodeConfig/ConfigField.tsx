@@ -5,10 +5,12 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, X, Link as LinkIcon, Unlink } from 'lucide-react';
+import { Plus, X, Link as LinkIcon, Unlink, Copy, Eye, EyeOff, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LinkedField, AvailableOutput } from './NodeConfigModal';
 import { LinkerPopover } from './LinkerPopover';
+import { InputsArrayField } from './InputsArrayField';
+import { useToast } from '@/hooks/use-toast';
 
 interface ConfigFieldProps {
   fieldName: string;
@@ -34,11 +36,15 @@ export function ConfigField({
   const [arrayItems, setArrayItems] = useState<any[]>(
     Array.isArray(value) ? value : []
   );
+  const [showSecret, setShowSecret] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const { toast } = useToast();
 
   const isLinked = !!linkedField;
   const isReadOnly = fieldSchema.readOnly || false;
   const fieldType = fieldSchema.type || 'string';
   const description = fieldSchema.description;
+  const isSecret = fieldName === 'token' || fieldName === 'apiKey' || fieldName === 'password';
 
   const handleArrayAdd = () => {
     const newItems = [...arrayItems, getDefaultValue(fieldSchema.items?.type || 'string')];
@@ -73,12 +79,60 @@ export function ConfigField({
     }
   };
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(String(value || ''));
+      setCopied(true);
+      toast({
+        title: 'Copiado!',
+        description: `${fieldName} copiado para a área de transferência`,
+      });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      toast({
+        title: 'Erro ao copiar',
+        description: 'Não foi possível copiar para a área de transferência',
+        variant: 'destructive',
+      });
+    }
+  };
+
   const renderField = () => {
-    // Read-only field
+    // Read-only field (with copy button and show/hide for secrets)
     if (isReadOnly) {
+      const displayValue = isSecret && !showSecret 
+        ? '•'.repeat(20) 
+        : (value || 'Gerado automaticamente');
+
       return (
-        <div className="p-2 bg-muted rounded-md text-sm text-muted-foreground">
-          {value || 'Gerado automaticamente'}
+        <div className="flex gap-2">
+          <Input
+            value={displayValue}
+            readOnly
+            className="flex-1 bg-muted cursor-not-allowed font-mono text-sm"
+          />
+          {value && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleCopy}
+              className="shrink-0"
+            >
+              {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+            </Button>
+          )}
+          {isSecret && value && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setShowSecret(!showSecret)}
+              className="shrink-0"
+            >
+              {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </Button>
+          )}
         </div>
       );
     }
@@ -108,6 +162,11 @@ export function ConfigField({
           </Button>
         </div>
       );
+    }
+
+    // Special field: inputs (webhook inputs array)
+    if (fieldName === 'inputs' && fieldType === 'object') {
+      return <InputsArrayField value={value} onChange={onChange} />;
     }
 
     // Regular fields

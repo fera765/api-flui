@@ -21,6 +21,8 @@ import { Button } from '@/components/ui/button';
 import { Plus, X, Save, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { getToolById } from '@/api/tools';
+import { createWebhookForAutomation } from '@/api/webhooks';
 
 // Custom Edge with delete button
 function CustomEdge({
@@ -100,6 +102,7 @@ const edgeTypes = {
 };
 
 interface WorkflowEditorProps {
+  automationId?: string;
   initialNodes?: Node<CustomNodeData>[];
   initialEdges?: Edge[];
   onSave?: (nodes: Node<CustomNodeData>[], edges: Edge[]) => void;
@@ -107,6 +110,7 @@ interface WorkflowEditorProps {
 }
 
 export function WorkflowEditor({
+  automationId,
   initialNodes = [],
   initialEdges = [],
   onSave,
@@ -232,79 +236,107 @@ export function WorkflowEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialNodes.length])
 
-  const handleAddTool = useCallback((tool: ToolItem) => {
-    const newNodeId = `node-${nodeIdCounter.current++}`;
-    const position = getNewNodePosition();
+  const handleAddTool = useCallback(async (tool: ToolItem) => {
+    try {
+      const newNodeId = `node-${nodeIdCounter.current++}`;
+      const position = getNewNodePosition();
 
-    // Mock input/output schemas - in production, fetch from API
-    const mockInputSchema = {
-      type: 'object',
-      properties: {
-        url: { type: 'string', description: 'URL para a requisição' },
-        method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'DELETE'] },
-        headers: { type: 'object' },
-        body: { type: 'string' },
-      },
-      required: ['url', 'method'],
-    };
+      // Fetch real tool data from API
+      const toolData = await getToolById(tool.id);
 
-    const mockOutputSchema = {
-      type: 'object',
-      properties: {
-        status: { type: 'number' },
-        data: { type: 'object' },
-        error: { type: 'string' },
-      },
-    };
+      let toolIdToUse = tool.id;
+      let initialConfig: Record<string, any> = {};
 
-    const newNode: Node<CustomNodeData> = {
-      id: newNodeId,
-      type: 'custom',
-      position,
-      data: {
-        label: tool.name,
-        type: tool.type as CustomNodeData['type'],
-        subtype: tool.subtype,
-        description: tool.description,
-        isFirst: nodes.length === 0,
-        toolId: tool.id,
-        config: {},
-        inputSchema: mockInputSchema,
-        outputSchema: mockOutputSchema,
-        onConfigure: handleConfigure,
-        onDelete: handleDeleteNode,
-      },
-    };
+      // If it's a webhook trigger, create a unique webhook for this automation
+      if (tool.name === 'WebHookTrigger' && automationId) {
+        try {
+          const webhook = await createWebhookForAutomation(automationId, {
+            method: 'POST',
+            inputs: {},
+          });
 
-    setNodes((nds) => [...nds, newNode]);
+          // Use the new webhook tool ID instead of the generic one
+          toolIdToUse = webhook.id;
 
-    // Auto-connect to the last node if it exists
-    if (nodes.length > 0) {
-      const lastNode = nodes[nodes.length - 1];
-      const newEdge: Edge = {
-        id: `edge-${lastNode.id}-${newNodeId}`,
-        source: lastNode.id,
-        target: newNodeId,
+          // Pre-fill config with webhook details (url and token are read-only)
+          initialConfig = {
+            url: webhook.url,
+            token: webhook.token,
+            method: webhook.method,
+            inputs: webhook.inputs || {},
+          };
+
+          toast({
+            title: 'Webhook criado',
+            description: 'Webhook único criado para esta automação',
+          });
+        } catch (error: any) {
+          console.error('Error creating webhook:', error);
+          toast({
+            title: 'Erro ao criar webhook',
+            description: error.response?.data?.error || error.message,
+            variant: 'destructive',
+          });
+          return; // Don't add node if webhook creation failed
+        }
+      }
+
+      const newNode: Node<CustomNodeData> = {
+        id: newNodeId,
         type: 'custom',
-        animated: true,
-        style: { stroke: 'hsl(var(--primary))', strokeWidth: 2 },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: 'hsl(var(--primary))',
-        },
+        position,
         data: {
-          onDelete: handleDeleteEdge,
+          label: tool.name,
+          type: tool.type as CustomNodeData['type'],
+          subtype: tool.subtype,
+          description: tool.description,
+          isFirst: nodes.length === 0,
+          toolId: toolIdToUse, // Use webhook ID if created, otherwise original tool ID
+          config: initialConfig, // Pre-filled for webhooks
+          inputSchema: toolData.inputSchema || { type: 'object', properties: {} },
+          outputSchema: toolData.outputSchema || { type: 'object', properties: {} },
+          onConfigure: handleConfigure,
+          onDelete: handleDeleteNode,
         },
       };
 
-      setEdges((eds) => [...eds, newEdge]);
-    }
+      setNodes((nds) => [...nds, newNode]);
 
-    toast({
-      title: 'Tool adicionada',
-      description: `${tool.name} foi adicionada ao workflow`,
-    });
-  }, [nodes, getNewNodePosition, setNodes, setEdges, toast]);
+      // Auto-connect to the last node if it exists
+      if (nodes.length > 0) {
+        const lastNode = nodes[nodes.length - 1];
+        const newEdge: Edge = {
+          id: `edge-${lastNode.id}-${newNodeId}`,
+          source: lastNode.id,
+          target: newNodeId,
+          type: 'custom',
+          animated: true,
+          style: { stroke: 'hsl(var(--primary))', strokeWidth: 2 },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: 'hsl(var(--primary))',
+          },
+          data: {
+            onDelete: handleDeleteEdge,
+          },
+        };
+
+        setEdges((eds) => [...eds, newEdge]);
+      }
+
+      toast({
+        title: 'Tool adicionada',
+        description: `${tool.name} foi adicionada ao workflow`,
+      });
+    } catch (error: any) {
+      console.error('Error adding tool:', error);
+      toast({
+        title: 'Erro ao adicionar tool',
+        description: error.response?.data?.error || error.message,
+        variant: 'destructive',
+      });
+    }
+  }, [nodes, automationId, getNewNodePosition, setNodes, setEdges, toast, handleConfigure, handleDeleteNode]);
 
   const handleDeleteEdge = useCallback((edgeId: string) => {
     setEdges((eds) => eds.filter((e) => e.id !== edgeId));

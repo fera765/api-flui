@@ -83,6 +83,14 @@ export const getAllTools = async (params?: {
 };
 
 /**
+ * Get tool by ID
+ */
+export const getToolById = async (toolId: string): Promise<Tool> => {
+  const response = await apiClient.get(`/api/tools/${toolId}`);
+  return response.data;
+};
+
+/**
  * Search tools by name or description
  */
 export const searchTools = async (query: string): Promise<{

@@ -351,6 +351,7 @@ const Automations = () => {
           {/* Workflow Editor */}
           <div className="flex-1">
             <WorkflowEditor
+              automationId={editingAutomation?.id}
               initialNodes={workflowNodes}
               initialEdges={workflowEdges}
               onSave={handleWorkflowSave}
