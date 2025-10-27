@@ -136,7 +136,11 @@ export function WorkflowEditor({
     };
   }, [nodes]);
 
-  const handleConfigure = useCallback((nodeId: string) => {
+  // Use refs to keep stable callbacks
+  const handleConfigureRef = useRef<(nodeId: string) => void>();
+  const handleDeleteNodeRef = useRef<(nodeId: string) => void>();
+
+  handleConfigureRef.current = (nodeId: string) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return;
 
@@ -149,16 +153,25 @@ export function WorkflowEditor({
       linkedFields: (node.data as any).linkedFields || {},
     });
     setConfigModalOpen(true);
-  }, [nodes]);
+  };
 
-  const handleDeleteNode = useCallback((nodeId: string) => {
+  handleDeleteNodeRef.current = (nodeId: string) => {
     setNodes((nds) => nds.filter(n => n.id !== nodeId));
     setEdges((eds) => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
     toast({
       title: 'Nó removido',
       description: 'O nó foi removido do workflow',
     });
-  }, [setNodes, setEdges, toast]);
+  };
+
+  // Stable wrapper functions
+  const handleConfigure = useCallback((nodeId: string) => {
+    handleConfigureRef.current?.(nodeId);
+  }, []);
+
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    handleDeleteNodeRef.current?.(nodeId);
+  }, []);
 
   const handleSaveConfig = useCallback((nodeId: string, config: Record<string, any>, linkedFields: Record<string, LinkedField>) => {
     setNodes((nds) =>
@@ -202,7 +215,7 @@ export function WorkflowEditor({
     }));
   };
 
-  // Inject callbacks into existing nodes
+  // Inject callbacks into existing nodes only once on mount
   useEffect(() => {
     if (initialNodes.length > 0) {
       setNodes((nds) =>
@@ -216,6 +229,7 @@ export function WorkflowEditor({
         }))
       );
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialNodes.length])
 
   const handleAddTool = useCallback((tool: ToolItem) => {
