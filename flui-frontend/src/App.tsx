@@ -9,6 +9,7 @@ import Settings from "./pages/Settings";
 import Agents from "./pages/Agents";
 import MCPs from "./pages/MCPs";
 import AllTools from "./pages/AllTools";
+import Automations from "./pages/Automations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/agents" element={<Agents />} />
             <Route path="/mcps" element={<MCPs />} />
             <Route path="/tools" element={<AllTools />} />
+            <Route path="/automations" element={<Automations />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -20,7 +20,19 @@ export function createCronTriggerTool(
     config,
     inputSchema: {
       type: 'object',
-      properties: inputs || {},
+      properties: {
+        schedule: {
+          type: 'string',
+          description: 'Expressão Cron (ex: "0 * * * *" para a cada hora, "0 0 * * *" para diariamente)',
+          pattern: '^[0-9\\s\\*\\/\\-\\,\\?LW#]+$',
+        },
+        enabled: {
+          type: 'boolean',
+          description: 'Ativar ou desativar este trigger',
+          default: true,
+        },
+      },
+      required: ['schedule'],
     },
     outputSchema: {
       type: 'object',

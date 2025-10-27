@@ -1,7 +1,8 @@
 import { cn } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Settings, Package, Wrench, Bot } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Settings, Package, Wrench, Bot, Home, Workflow } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
+import { Separator } from '@/components/ui/separator';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -91,10 +92,16 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             {isOpen ? (
               <>
                 <SidebarLink
-                  href="/settings"
-                  icon={<Settings className="w-5 h-5" />}
-                  label="Configurações"
+                  href="/"
+                  icon={<Home className="w-5 h-5" />}
+                  label="Dashboard"
                 />
+                <Separator className="my-2" />
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Recursos
+                  </p>
+                </div>
                 <SidebarLink
                   href="/agents"
                   icon={<Bot className="w-5 h-5" />}
@@ -110,13 +117,33 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   icon={<Wrench className="w-5 h-5" />}
                   label="Tools"
                 />
+                <SidebarLink
+                  href="/automations"
+                  icon={<Workflow className="w-5 h-5" />}
+                  label="Automações"
+                />
+                <Separator className="my-2" />
+                <div className="px-3 py-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Sistema
+                  </p>
+                </div>
+                <SidebarLink
+                  href="/settings"
+                  icon={<Settings className="w-5 h-5" />}
+                  label="Configurações"
+                />
               </>
             ) : (
               <div className="flex flex-col items-center gap-3">
-                <SidebarIconLink href="/settings" icon={<Settings className="w-5 h-5" />} />
+                <SidebarIconLink href="/" icon={<Home className="w-5 h-5" />} />
+                <div className="w-8 h-px bg-border my-1" />
                 <SidebarIconLink href="/agents" icon={<Bot className="w-5 h-5" />} />
                 <SidebarIconLink href="/mcps" icon={<Package className="w-5 h-5" />} />
                 <SidebarIconLink href="/tools" icon={<Wrench className="w-5 h-5" />} />
+                <SidebarIconLink href="/automations" icon={<Workflow className="w-5 h-5" />} />
+                <div className="w-8 h-px bg-border my-1" />
+                <SidebarIconLink href="/settings" icon={<Settings className="w-5 h-5" />} />
               </div>
             )}
           </nav>

@@ -99,7 +99,13 @@ allToolsRoutes.get(
             description: agent.getDescription(),
             defaultModel: agent.getDefaultModel(),
           },
-          tools: agentTools.map(tool => tool.toJSON()),
+          tools: agentTools.map(tool => {
+            // Handle both Tool instances and plain ToolResponse objects
+            if (typeof tool === 'object' && 'toJSON' in tool && typeof tool.toJSON === 'function') {
+              return tool.toJSON();
+            }
+            return tool;
+          }),
           toolsCount: agentTools.length,
         });
       }

@@ -281,6 +281,24 @@ const Agents = () => {
     }
   };
 
+  const toggleAgent = (agentData: AgentTools) => {
+    // Treat the agent itself as a tool
+    const agentAsToolId = `agent:${agentData.agent.id}`;
+    const isSelected = isToolSelected(agentAsToolId);
+    
+    if (isSelected) {
+      setSelectedTools(selectedTools.filter((t) => t.id !== agentAsToolId));
+    } else {
+      setSelectedTools([...selectedTools, {
+        id: agentAsToolId,
+        name: agentData.agent.name,
+        description: agentData.agent.description || `Agent: ${agentData.agent.name}`,
+        inputSchema: {},
+        outputSchema: {},
+      }]);
+    }
+  };
+
   if (loading) {
     return (
       <MainLayout>
@@ -298,7 +316,7 @@ const Agents = () => {
     <MainLayout>
       <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-primary/10 rounded-lg">
               <Brain className="w-5 h-5 text-primary" />
@@ -511,53 +529,56 @@ const Agents = () => {
                         )}
 
                         {/* Agents */}
-                        {allToolsData.agents.length > 0 && (
+                        {allToolsData.agents.filter((a) => !editingAgent || a.agent.id !== editingAgent.id).length > 0 && (
                           <div className="space-y-3">
                             <Separator />
                             <div className="flex items-center gap-2 sticky top-0 bg-background py-2">
                               <Users className="w-4 h-4 text-primary" />
                               <h3 className="font-semibold">Agents</h3>
                               <Badge variant="secondary" className="ml-auto">
-                                {allToolsData.agents.reduce((acc, a) => acc + a.toolsCount, 0)}
+                                {allToolsData.agents.filter((a) => !editingAgent || a.agent.id !== editingAgent.id).length}
                               </Badge>
                             </div>
-                            <div className="space-y-4 pl-1">
-                              {allToolsData.agents.map((agentData) => (
-                                <div key={agentData.agent.id} className="space-y-2">
-                                  <div className="flex items-center gap-2">
-                                    <Bot className="w-3.5 h-3.5 text-muted-foreground" />
-                                    <h4 className="text-sm font-medium text-muted-foreground">
-                                      {agentData.agent.name}
-                                    </h4>
-                                    <Badge variant="outline" className="text-xs ml-auto">
-                                      {agentData.toolsCount}
-                                    </Badge>
-                                  </div>
-                                  <div className="space-y-2">
-                                    {agentData.tools.map((tool) => (
-                                      <div
-                                        key={tool.id}
-                                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent transition-colors cursor-pointer"
-                                        onClick={() => toggleTool(tool)}
-                                      >
-                                        <Checkbox
-                                          checked={isToolSelected(tool.id)}
-                                          onCheckedChange={() => toggleTool(tool)}
-                                          className="mt-1"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                          <p className="font-medium text-sm">{tool.name}</p>
-                                          {tool.description && (
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                              {tool.description}
-                                            </p>
-                                          )}
+                            <div className="space-y-2 pl-1">
+                              {allToolsData.agents
+                                .filter((agentData) => {
+                                  // Prevent agent from selecting itself (avoid infinite loops)
+                                  return !editingAgent || agentData.agent.id !== editingAgent.id;
+                                })
+                                .map((agentData) => {
+                                  const agentAsToolId = `agent:${agentData.agent.id}`;
+                                  return (
+                                    <div
+                                      key={agentData.agent.id}
+                                      className="flex items-start gap-3 p-3 rounded-lg border hover:bg-accent transition-colors cursor-pointer"
+                                      onClick={() => toggleAgent(agentData)}
+                                    >
+                                      <Checkbox
+                                        checked={isToolSelected(agentAsToolId)}
+                                        onCheckedChange={() => toggleAgent(agentData)}
+                                        className="mt-1"
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                          <Bot className="w-4 h-4 text-primary" />
+                                          <p className="font-medium text-sm">{agentData.agent.name}</p>
+                                          <Badge variant="outline" className="text-xs">
+                                            Agent
+                                          </Badge>
+                                        </div>
+                                        {agentData.agent.description && (
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            {agentData.agent.description}
+                                          </p>
+                                        )}
+                                        <div className="flex items-center gap-1 mt-1.5 text-xs text-muted-foreground">
+                                          <Wrench className="w-3 h-3" />
+                                          <span>{agentData.toolsCount} {agentData.toolsCount === 1 ? 'tool' : 'tools'}</span>
                                         </div>
                                       </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
+                                    </div>
+                                  );
+                                })}
                             </div>
                           </div>
                         )}
