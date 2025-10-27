@@ -16,6 +16,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css';
 import { CustomNode, CustomNodeData } from '@/components/Workflow/CustomNode';
 import { ToolSearchModal, ToolItem } from '@/components/Workflow/ToolSearchModal';
+import { NodeConfigModal, NodeConfigData, LinkedField, AvailableOutput } from '@/components/Workflow/NodeConfig/NodeConfigModal';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Save, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
