@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, X, Link as LinkIcon, Unlink, Copy, Eye, EyeOff, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LinkedField, AvailableOutput } from './NodeConfigModal';
@@ -173,32 +174,21 @@ export function ConfigField({
       return <InputsArrayField value={value} onChange={onChange} />;
     }
 
-    // Special field: method (HTTP method with enum)
-    if (fieldName === 'method' && fieldSchema.enum) {
+    // Fields with enum (select dropdown)
+    if (fieldSchema.enum && Array.isArray(fieldSchema.enum)) {
       return (
-        <div className="flex gap-3">
-          {fieldSchema.enum.map((option: string) => (
-            <label
-              key={option}
-              className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer transition-all',
-                value === option
-                  ? 'border-primary bg-primary/10 text-primary font-medium'
-                  : 'border-border hover:border-primary/50 hover:bg-accent'
-              )}
-            >
-              <input
-                type="radio"
-                name={fieldName}
-                value={option}
-                checked={value === option}
-                onChange={(e) => onChange(e.target.value)}
-                className="sr-only"
-              />
-              <span className="font-mono text-sm">{option}</span>
-            </label>
-          ))}
-        </div>
+        <Select value={value || ''} onValueChange={onChange}>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={`Selecione ${fieldName}`} />
+          </SelectTrigger>
+          <SelectContent>
+            {fieldSchema.enum.map((option: string) => (
+              <SelectItem key={option} value={option}>
+                <span className="font-medium">{option}</span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       );
     }
 
@@ -233,63 +223,100 @@ export function ConfigField({
         const isObjectArray = itemType === 'object';
 
         return (
-          <div className="space-y-2">
-            {arrayItems.map((item, index) => (
-              <div key={index} className="flex gap-2">
-                {isObjectArray ? (
-                  <div className="flex-1 grid grid-cols-2 gap-2">
-                    <Input
-                      placeholder="Chave"
-                      value={Object.keys(item)[0] || ''}
-                      onChange={(e) => {
-                        const key = e.target.value;
-                        const val = Object.values(item)[0];
-                        handleArrayItemChange(index, { [key]: val });
-                      }}
-                    />
-                    <Input
-                      placeholder="Valor"
-                      value={Object.values(item)[0] || ''}
-                      onChange={(e) => {
-                        const key = Object.keys(item)[0];
-                        handleArrayItemChange(index, { [key]: e.target.value });
-                      }}
-                    />
-                  </div>
-                ) : (
-                  <Input
-                    className="flex-1"
-                    type={itemType === 'number' || itemType === 'integer' ? 'number' : 'text'}
-                    value={item || ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      handleArrayItemChange(
-                        index,
-                        itemType === 'number' || itemType === 'integer' ? Number(val) : val
-                      );
-                    }}
-                    placeholder={`Item ${index + 1}`}
-                  />
-                )}
+          <div className="space-y-3">
+            {arrayItems.length === 0 ? (
+              <div className="text-center py-8 px-4 border-2 border-dashed rounded-lg bg-muted/20">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Nenhum item adicionado
+                </p>
                 <Button
                   size="sm"
-                  variant="ghost"
-                  onClick={() => handleArrayRemove(index)}
-                  className="text-destructive hover:text-destructive"
+                  variant="default"
+                  onClick={handleArrayAdd}
+                  className="gap-2"
                 >
-                  <X className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
+                  Adicionar {isObjectArray ? 'Par Chave-Valor' : 'Primeiro Item'}
                 </Button>
               </div>
-            ))}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleArrayAdd}
-              className="w-full"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar {isObjectArray ? 'Par Chave-Valor' : 'Item'}
-            </Button>
+            ) : (
+              <>
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                  {arrayItems.map((item, index) => (
+                    <div 
+                      key={index} 
+                      className="flex gap-2 p-3 bg-muted/30 rounded-lg border animate-in slide-in-from-top-2 duration-200"
+                    >
+                      {isObjectArray ? (
+                        <div className="flex-1 grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Chave</Label>
+                            <Input
+                              placeholder="ex: status"
+                              value={Object.keys(item)[0] || ''}
+                              onChange={(e) => {
+                                const key = e.target.value;
+                                const val = Object.values(item)[0];
+                                handleArrayItemChange(index, { [key]: val });
+                              }}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Valor</Label>
+                            <Input
+                              placeholder="ex: active"
+                              value={Object.values(item)[0] || ''}
+                              onChange={(e) => {
+                                const key = Object.keys(item)[0];
+                                handleArrayItemChange(index, { [key]: e.target.value });
+                              }}
+                              className="h-9"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex-1">
+                          <Input
+                            type={itemType === 'number' || itemType === 'integer' ? 'number' : 'text'}
+                            value={item || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              handleArrayItemChange(
+                                index,
+                                itemType === 'number' || itemType === 'integer' ? Number(val) : val
+                              );
+                            }}
+                            placeholder={`Item ${index + 1}`}
+                            className="h-9"
+                          />
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleArrayRemove(index)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 h-9 w-9 p-0"
+                        title="Remover"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleArrayAdd}
+                  className="w-full gap-2 border-dashed hover:border-solid"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar {isObjectArray ? 'Outro Par' : 'Outro Item'}
+                </Button>
+              </>
+            )}
           </div>
         );
 
