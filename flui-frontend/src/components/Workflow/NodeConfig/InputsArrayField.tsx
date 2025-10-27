@@ -70,7 +70,11 @@ export function InputsArrayField({ value, onChange, disabled }: InputsArrayField
     const newPairs = [...pairs];
     newPairs[index].type = newType;
     setPairs(newPairs);
-    notifyChange(newPairs);
+    // Only notify change if the key is not empty
+    // This prevents the field from being removed from UI when key is empty
+    if (newPairs[index].key.trim()) {
+      notifyChange(newPairs);
+    }
   };
 
   const notifyChange = (pairsArray: InputPair[]) => {
