@@ -69,6 +69,29 @@ export function NodeConfigModal({
   const handleSave = () => {
     if (!nodeData) return;
 
+    // Validar campos obrigatórios
+    const schema = nodeData.inputSchema?.properties || {};
+    const required = nodeData.inputSchema?.required || [];
+    const missingFields: string[] = [];
+
+    required.forEach((fieldName: string) => {
+      const hasValue = config[fieldName] !== undefined && config[fieldName] !== null && config[fieldName] !== '';
+      const hasLink = linkedFields[fieldName] !== undefined;
+      
+      if (!hasValue && !hasLink) {
+        missingFields.push(fieldName);
+      }
+    });
+
+    if (missingFields.length > 0) {
+      toast({
+        title: 'Campos obrigatórios não preenchidos',
+        description: `Preencha ou vincule os campos: ${missingFields.join(', ')}`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       onSave(nodeData.nodeId, config, linkedFields);

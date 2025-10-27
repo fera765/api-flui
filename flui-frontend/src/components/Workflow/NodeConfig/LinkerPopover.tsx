@@ -69,8 +69,8 @@ export function LinkerPopover({
           Linker
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="p-3 border-b">
+      <PopoverContent className="w-80 p-0" align="end" sideOffset={5}>
+        <div className="p-3 border-b bg-background sticky top-0 z-10">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -82,9 +82,10 @@ export function LinkerPopover({
           </div>
         </div>
 
-        <ScrollArea className="h-[300px]">
+        <ScrollArea className="max-h-[300px]">
+          <div className="p-2">
           {filteredOutputs.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">
+            <div className="text-center py-8 px-4 text-sm text-muted-foreground">
               {compatibleOutputs.length === 0 ? (
                 <>
                   Nenhum output compatível disponível
@@ -97,7 +98,6 @@ export function LinkerPopover({
               )}
             </div>
           ) : (
-            <div className="p-2">
               {filteredOutputs.map((node, nodeIndex) => (
                 <div key={node.nodeId} className="mb-3 last:mb-0">
                   {/* Node Header */}
@@ -143,8 +143,8 @@ export function LinkerPopover({
                   )}
                 </div>
               ))}
-            </div>
           )}
+          </div>
         </ScrollArea>
       </PopoverContent>
     </Popover>

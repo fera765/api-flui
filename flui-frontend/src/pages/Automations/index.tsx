@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/Layout/MainLayout';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -384,13 +385,15 @@ const Automations = () => {
 
           {/* Workflow Editor */}
           <div className="flex-1">
-            <WorkflowEditor
-              automationId={editingAutomation?.id}
-              initialNodes={workflowNodes}
-              initialEdges={workflowEdges}
-              onSave={handleWorkflowSave}
-              onExecute={() => editingAutomation && handleExecute(editingAutomation.id, editingAutomation.name)}
-            />
+            <ErrorBoundary>
+              <WorkflowEditor
+                automationId={editingAutomation?.id}
+                initialNodes={workflowNodes}
+                initialEdges={workflowEdges}
+                onSave={handleWorkflowSave}
+                onExecute={() => editingAutomation && handleExecute(editingAutomation.id, editingAutomation.name)}
+              />
+            </ErrorBoundary>
           </div>
         </div>
       </MainLayout>
