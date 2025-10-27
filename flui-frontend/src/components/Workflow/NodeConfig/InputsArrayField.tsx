@@ -28,21 +28,29 @@ export function InputsArrayField({ value, onChange, disabled }: InputsArrayField
 
   // Convert object to array on mount/value change
   useEffect(() => {
-    if (value && typeof value === 'object') {
+    if (value && typeof value === 'object' && Object.keys(value).length > 0) {
       const pairsArray = Object.entries(value).map(([key, type]) => ({
         key,
         type: type as 'string' | 'number' | 'array' | 'object',
       }));
-      setPairs(pairsArray);
-    } else {
-      setPairs([]);
+      // Only update if different from current pairs
+      const currentKeys = pairs.map(p => `${p.key}:${p.type}`).join(',');
+      const newKeys = pairsArray.map(p => `${p.key}:${p.type}`).join(',');
+      if (currentKeys !== newKeys) {
+        setPairs(pairsArray);
+      }
+    } else if (!value || Object.keys(value).length === 0) {
+      // Only clear if we actually have pairs
+      if (pairs.length > 0) {
+        setPairs([]);
+      }
     }
-  }, [value]);
+  }, [value]); // Removed pairs from dependency to avoid loop
 
   const handleAddPair = () => {
     const newPairs = [...pairs, { key: '', type: 'string' as const }];
     setPairs(newPairs);
-    notifyChange(newPairs);
+    // Don't notify change for empty keys - will notify on key input
   };
 
   const handleRemovePair = (index: number) => {

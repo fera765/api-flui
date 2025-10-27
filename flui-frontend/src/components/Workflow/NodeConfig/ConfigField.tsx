@@ -100,9 +100,11 @@ export function ConfigField({
   const renderField = () => {
     // Read-only field (with copy button and show/hide for secrets)
     if (isReadOnly) {
-      const displayValue = isSecret && !showSecret 
+      // Ensure we have the actual value, not undefined
+      const actualValue = value !== undefined && value !== null && value !== '' ? String(value) : '';
+      const displayValue = isSecret && !showSecret && actualValue
         ? '•'.repeat(20) 
-        : (value || 'Gerado automaticamente');
+        : (actualValue || 'Aguardando...');
 
       return (
         <div className="flex gap-2">
@@ -111,24 +113,26 @@ export function ConfigField({
             readOnly
             className="flex-1 bg-muted cursor-not-allowed font-mono text-sm"
           />
-          {value && (
+          {actualValue && (
             <Button
               type="button"
               size="sm"
               variant="outline"
               onClick={handleCopy}
               className="shrink-0"
+              title="Copiar para área de transferência"
             >
               {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
             </Button>
           )}
-          {isSecret && value && (
+          {isSecret && actualValue && (
             <Button
               type="button"
               size="sm"
               variant="outline"
               onClick={() => setShowSecret(!showSecret)}
               className="shrink-0"
+              title={showSecret ? 'Ocultar' : 'Mostrar'}
             >
               {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </Button>
@@ -331,7 +335,7 @@ export function ConfigField({
           )}
         </Label>
 
-        {!isReadOnly && !isLinked && fieldType !== 'array' && (
+        {!isReadOnly && !isLinked && fieldType !== 'array' && availableOutputs.length > 0 && (
           <LinkerPopover
             fieldName={fieldName}
             fieldType={fieldType}

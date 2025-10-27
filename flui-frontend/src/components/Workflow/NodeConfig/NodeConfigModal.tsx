@@ -60,6 +60,7 @@ export function NodeConfigModal({
 
   useEffect(() => {
     if (nodeData) {
+      console.log('[NodeConfigModal] nodeData.config:', nodeData.config);
       setConfig(nodeData.config || {});
       setLinkedFields(nodeData.linkedFields || {});
     }
