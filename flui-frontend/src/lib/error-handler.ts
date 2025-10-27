@@ -1,124 +1,160 @@
-import { toast } from '@/hooks/use-toast';
+/**
+ * Tratamento centralizado de erros da API
+ * Garante que erros não quebrem a aplicação
+ */
 
 export interface ApiError {
   message: string;
-  status?: number;
   code?: string;
+  status?: number;
+  details?: any;
 }
 
-export function handleApiError(error: any): ApiError {
-  console.error('[API Error]', error);
-
-  // Se j\u00e1 \u00e9 um erro formatado
-  if (error.message && error.status) {
+/**
+ * Extrai mensagem de erro de forma segura
+ */
+export function extractErrorMessage(error: any): string {
+  // Se for uma string, retorna direto
+  if (typeof error === 'string') {
     return error;
   }
 
-  // Erro de rede
-  if (error.message?.includes('fetch') || error.message?.includes('NetworkError')) {
-    return {
-      message: 'Erro de conex\u00e3o. Verifique sua internet e tente novamente.',
-      status: 0,
-      code: 'NETWORK_ERROR',
-    };
+  // Se tiver message
+  if (error?.message) {
+    return error.message;
   }
 
-  // Erro de resposta HTTP
-  if (error.response) {
-    const status = error.response.status;
-    const data = error.response.data;
-
-    return {
-      message: data?.message || getDefaultErrorMessage(status),
-      status,
-      code: data?.code || `HTTP_${status}`,
-    };
+  // Se for resposta de API
+  if (error?.response?.data?.error) {
+    return error.response.data.error;
   }
 
-  // Erro gen\u00e9rico
-  return {
-    message: error.message || 'Ocorreu um erro inesperado',
-    status: 500,
-    code: 'UNKNOWN_ERROR',
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+
+  // Se for erro de rede
+  if (error?.code === 'ECONNREFUSED' || error?.code === 'ERR_NETWORK') {
+    return 'Erro de conexão com o servidor. Verifique sua internet e tente novamente.';
+  }
+
+  // Mensagem padrão
+  return 'Ocorreu um erro inesperado. Tente novamente.';
+}
+
+/**
+ * Wrapper para chamadas de API com tratamento de erro automático
+ */
+export async function apiCall<T>(
+  fn: () => Promise<T>,
+  fallbackValue?: T
+): Promise<T | undefined> {
+  try {
+    return await fn();
+  } catch (error) {
+    console.error('API Error:', error);
+    
+    // Log do erro (pode ser enviado para serviço de monitoramento)
+    logError(error);
+
+    // Retorna valor de fallback se fornecido
+    if (fallbackValue !== undefined) {
+      return fallbackValue;
+    }
+
+    // Re-throw se não houver fallback (para que o componente possa tratar)
+    throw error;
+  }
+}
+
+/**
+ * Wrapper para chamadas de API que devem ser silenciosas (não mostrar erro ao usuário)
+ */
+export async function silentApiCall<T>(
+  fn: () => Promise<T>,
+  defaultValue: T
+): Promise<T> {
+  try {
+    return await fn();
+  } catch (error) {
+    console.warn('Silent API call failed:', error);
+    logError(error);
+    return defaultValue;
+  }
+}
+
+/**
+ * Tenta executar uma função várias vezes antes de falhar
+ */
+export async function retryApiCall<T>(
+  fn: () => Promise<T>,
+  retries: number = 3,
+  delay: number = 1000
+): Promise<T> {
+  let lastError: any;
+
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      console.warn(`API call failed (attempt ${i + 1}/${retries}):`, error);
+
+      if (i < retries - 1) {
+        // Aguarda antes de tentar novamente (backoff exponencial)
+        await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Log de erros (pode ser integrado com serviço de monitoramento)
+ */
+function logError(error: any) {
+  const errorData: ApiError = {
+    message: extractErrorMessage(error),
+    code: error?.code,
+    status: error?.response?.status,
+    details: error?.response?.data || error,
   };
-}
 
-function getDefaultErrorMessage(status: number): string {
-  switch (status) {
-    case 400:
-      return 'Requisi\u00e7\u00e3o inv\u00e1lida';
-    case 401:
-      return 'N\u00e3o autorizado';
-    case 403:
-      return 'Acesso negado';
-    case 404:
-      return 'Recurso n\u00e3o encontrado';
-    case 409:
-      return 'Conflito de dados';
-    case 422:
-      return 'Dados inv\u00e1lidos';
-    case 429:
-      return 'Muitas requisi\u00e7\u00f5es. Aguarde um momento.';
-    case 500:
-      return 'Erro interno do servidor';
-    case 503:
-      return 'Servi\u00e7o indispon\u00edvel';
-    default:
-      return `Erro ${status}`;
+  // Em produção, enviar para serviço de monitoramento (Sentry, etc.)
+  if (process.env.NODE_ENV === 'production') {
+    // sendToMonitoringService(errorData);
   }
-}
 
-export function showErrorToast(error: any, title?: string) {
-  const apiError = handleApiError(error);
-  
-  toast({
-    title: title || 'Erro',
-    description: apiError.message,
-    variant: 'destructive',
+  // Log estruturado no console
+  console.error('[Error Handler]', {
+    timestamp: new Date().toISOString(),
+    ...errorData,
   });
 }
 
-export function isRecoverableError(error: ApiError): boolean {
-  // Erros que n\u00e3o devem quebrar a aplica\u00e7\u00e3o
-  const recoverableCodes = [
-    'NETWORK_ERROR',
-    'HTTP_404',
-    'HTTP_409',
-    'HTTP_422',
-    'HTTP_429',
-  ];
-
-  return error.code ? recoverableCodes.includes(error.code) : true;
+/**
+ * Verifica se um erro é de rede/conectividade
+ */
+export function isNetworkError(error: any): boolean {
+  return (
+    error?.code === 'ECONNREFUSED' ||
+    error?.code === 'ERR_NETWORK' ||
+    error?.message?.includes('Network Error') ||
+    error?.message?.includes('Failed to fetch')
+  );
 }
 
-// Wrapper para chamadas de API com tratamento de erro
-export async function safeApiCall<T>(
-  apiCall: () => Promise<T>,
-  options?: {
-    showToast?: boolean;
-    toastTitle?: string;
-    onError?: (error: ApiError) => void;
-  }
-): Promise<T | null> {
-  try {
-    return await apiCall();
-  } catch (error) {
-    const apiError = handleApiError(error);
+/**
+ * Verifica se um erro é de autenticação
+ */
+export function isAuthError(error: any): boolean {
+  return error?.response?.status === 401 || error?.response?.status === 403;
+}
 
-    if (options?.showToast !== false) {
-      showErrorToast(apiError, options?.toastTitle);
-    }
-
-    if (options?.onError) {
-      options.onError(apiError);
-    }
-
-    // Se \u00e9 um erro recover\u00e1vel, retorna null para continuar
-    if (isRecoverableError(apiError)) {
-      return null;
-    }
-
-    // Se n\u00e3o \u00e9 recover\u00e1vel, propaga o erro
-    throw error;
-  }
+/**
+ * Verifica se um erro é de validação
+ */
+export function isValidationError(error: any): boolean {
+  return error?.response?.status === 400 || error?.response?.status === 422;
 }

@@ -69,7 +69,7 @@ export function LinkerPopover({
           Linker
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end" sideOffset={5}>
+      <PopoverContent className="w-80 p-0 overflow-hidden" align="end" sideOffset={5}>
         <div className="p-3 border-b bg-background sticky top-0 z-10">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -82,7 +82,7 @@ export function LinkerPopover({
           </div>
         </div>
 
-        <ScrollArea className="max-h-[300px]">
+        <ScrollArea className="h-[300px] overflow-y-auto">
           <div className="p-2">
             {filteredOutputs.length === 0 ? (
               <div className="text-center py-8 px-4 text-sm text-muted-foreground">

@@ -26,6 +26,7 @@ import { getAutomationById, Automation } from '@/api/automations';
 import { startExecution, streamExecutionEvents, NodeEvent, ExecutionStatus } from '@/api/executions';
 import { createChat, sendMessage, Chat as ChatType, ChatMessage } from '@/api/chat';
 import { useToast } from '@/hooks/use-toast';
+import { extractErrorMessage, apiCall } from '@/lib/error-handler';
 
 export default function AutomationExecution() {
   const { id } = useParams<{ id: string }>();
@@ -62,12 +63,23 @@ export default function AutomationExecution() {
   const loadAutomation = async () => {
     try {
       setLoading(true);
-      const data = await getAutomationById(id!);
+      const data = await apiCall(() => getAutomationById(id!));
+      
+      if (!data) {
+        toast({
+          title: 'Erro ao carregar automação',
+          description: 'Não foi possível carregar a automação. Tente novamente.',
+          variant: 'destructive',
+        });
+        navigate('/automations');
+        return;
+      }
+      
       setAutomation(data);
     } catch (error: any) {
       toast({
         title: 'Erro ao carregar automação',
-        description: error.message,
+        description: extractErrorMessage(error),
         variant: 'destructive',
       });
       navigate('/automations');
@@ -84,8 +96,18 @@ export default function AutomationExecution() {
       setExecutionComplete(false);
       setNodeEvents(new Map());
 
-      // Start execution
-      await startExecution(automation.id);
+      // Start execution with error handling
+      const result = await apiCall(() => startExecution(automation.id));
+      
+      if (!result) {
+        toast({
+          title: 'Erro ao iniciar execução',
+          description: 'Não foi possível iniciar a execução. Verifique se todos os nós estão configurados corretamente.',
+          variant: 'destructive',
+        });
+        setExecuting(false);
+        return;
+      }
 
       toast({
         title: 'Execução iniciada',
@@ -105,7 +127,7 @@ export default function AutomationExecution() {
     } catch (error: any) {
       toast({
         title: 'Erro ao iniciar execução',
-        description: error.message,
+        description: extractErrorMessage(error),
         variant: 'destructive',
       });
       setExecuting(false);
@@ -138,7 +160,7 @@ export default function AutomationExecution() {
     
     toast({
       title: 'Erro na execução',
-      description: error.message,
+      description: extractErrorMessage(error),
       variant: 'destructive',
     });
   };
@@ -147,10 +169,13 @@ export default function AutomationExecution() {
     if (!automation || chat) return;
 
     try {
-      const newChat = await createChat(automation.id);
-      setChat(newChat);
+      const newChat = await apiCall(() => createChat(automation.id));
+      if (newChat) {
+        setChat(newChat);
+      }
     } catch (error: any) {
       console.error('Error creating chat:', error);
+      // Silent failure - chat é opcional
     }
   };
 
@@ -170,7 +195,18 @@ export default function AutomationExecution() {
     setSendingMessage(true);
 
     try {
-      const response = await sendMessage(chat.id, userMessage.content);
+      const response = await apiCall(() => sendMessage(chat.id, userMessage.content));
+      
+      if (!response) {
+        // Remove temporary message on error
+        setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+        toast({
+          title: 'Erro ao enviar mensagem',
+          description: 'Não foi possível enviar a mensagem. Tente novamente.',
+          variant: 'destructive',
+        });
+        return;
+      }
       
       // Replace temp message with real one and add assistant response
       setMessages(prev => [
@@ -180,9 +216,11 @@ export default function AutomationExecution() {
       ]);
 
     } catch (error: any) {
+      // Remove temporary message on error
+      setMessages(prev => prev.filter(m => m.id !== userMessage.id));
       toast({
         title: 'Erro ao enviar mensagem',
-        description: error.message,
+        description: extractErrorMessage(error),
         variant: 'destructive',
       });
     } finally {
@@ -200,12 +238,46 @@ export default function AutomationExecution() {
     return event.status;
   };
 
-  const downloadFile = (file: any) => {
-    // Implement file download logic
-    toast({
-      title: 'Download iniciado',
-      description: `Baixando ${file.name}...`,
-    });
+  const downloadFile = async (file: any) => {
+    try {
+      // Se o arquivo tem uma URL direta
+      if (file.url) {
+        const link = document.createElement('a');
+        link.href = file.url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        toast({
+          title: 'Download iniciado',
+          description: `${file.name} está sendo baixado`,
+        });
+      } else if (file.path) {
+        // Se tiver path, fazer requisição para o backend
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000/api'}/files/${file.path}`);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        toast({
+          title: 'Download concluído',
+          description: `${file.name} foi baixado com sucesso`,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Erro no download',
+        description: extractErrorMessage(error),
+        variant: 'destructive',
+      });
+    }
   };
 
   if (loading) {
@@ -329,25 +401,25 @@ export default function AutomationExecution() {
                           <div
                             key={node.id}
                             className={cn(
-                              "p-4 rounded-lg border-2 transition-all duration-300",
-                              status === 'running' && "border-blue-500 bg-blue-50 dark:bg-blue-950/20 animate-pulse",
-                              status === 'completed' && "border-green-500 bg-green-50 dark:bg-green-950/20",
-                              status === 'failed' && "border-red-500 bg-red-50 dark:bg-red-950/20",
-                              status === 'idle' && "border-border bg-card"
+                              "p-4 rounded-lg border-2 transition-all duration-500 transform",
+                              status === 'running' && "border-blue-500 bg-blue-50 dark:bg-blue-950/20 animate-pulse scale-105 shadow-lg shadow-blue-500/20",
+                              status === 'completed' && "border-green-500 bg-green-50 dark:bg-green-950/20 animate-in slide-in-from-left-2 duration-300",
+                              status === 'failed' && "border-red-500 bg-red-50 dark:bg-red-950/20 animate-in shake duration-500",
+                              status === 'idle' && "border-border bg-card opacity-60"
                             )}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex items-start gap-3 flex-1">
                                 <div className={cn(
-                                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors",
-                                  status === 'running' && "bg-blue-600 text-white",
-                                  status === 'completed' && "bg-green-600 text-white",
-                                  status === 'failed' && "bg-red-600 text-white",
+                                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300",
+                                  status === 'running' && "bg-blue-600 text-white animate-pulse ring-4 ring-blue-400/50",
+                                  status === 'completed' && "bg-green-600 text-white animate-in zoom-in-50 duration-300",
+                                  status === 'failed' && "bg-red-600 text-white animate-in zoom-in-50 duration-300",
                                   status === 'idle' && "bg-muted text-muted-foreground"
                                 )}>
                                   {status === 'running' && <Loader2 className="w-4 h-4 animate-spin" />}
-                                  {status === 'completed' && <CheckCircle2 className="w-4 h-4" />}
-                                  {status === 'failed' && <XCircle className="w-4 h-4" />}
+                                  {status === 'completed' && <CheckCircle2 className="w-4 h-4 animate-in zoom-in-95 duration-200" />}
+                                  {status === 'failed' && <XCircle className="w-4 h-4 animate-in zoom-in-95 duration-200" />}
                                   {status === 'idle' && index + 1}
                                 </div>
 
@@ -361,14 +433,14 @@ export default function AutomationExecution() {
                                     </Badge>
                                   </div>
 
-                                  {/* Inputs */}
+                                  {/* Outputs */}
                                   {event?.outputs && Object.keys(event.outputs).length > 0 && (
-                                    <div className="mt-2 space-y-1">
+                                    <div className="mt-2 space-y-1 animate-in slide-in-from-top-2 duration-300">
                                       <p className="text-xs text-muted-foreground font-medium">Outputs:</p>
-                                      <div className="bg-background/50 rounded p-2 space-y-1">
+                                      <div className="bg-background/50 rounded p-2 space-y-1 border border-green-200 dark:border-green-800">
                                         {Object.entries(event.outputs).map(([key, value]) => (
-                                          <div key={key} className="text-xs font-mono">
-                                            <span className="text-primary">{key}:</span>{' '}
+                                          <div key={key} className="text-xs font-mono animate-in fade-in duration-200">
+                                            <span className="text-primary font-semibold">{key}:</span>{' '}
                                             <span className="text-foreground">
                                               {typeof value === 'object' 
                                                 ? JSON.stringify(value).substring(0, 50) 
@@ -382,9 +454,12 @@ export default function AutomationExecution() {
 
                                   {/* Error */}
                                   {event?.error && (
-                                    <div className="mt-2">
-                                      <p className="text-xs text-destructive font-medium">Erro:</p>
-                                      <p className="text-xs text-destructive/80 bg-destructive/10 rounded p-2 mt-1">
+                                    <div className="mt-2 animate-in slide-in-from-top-2 duration-300">
+                                      <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                                        <XCircle className="w-3 h-3" />
+                                        Erro:
+                                      </p>
+                                      <p className="text-xs text-destructive/80 bg-destructive/10 rounded p-2 mt-1 border border-destructive/20">
                                         {event.error}
                                       </p>
                                     </div>
@@ -457,7 +532,7 @@ export default function AutomationExecution() {
                   if (!chat) initializeChat();
                 }}
                 variant={chatOpen ? "default" : "outline"}
-                className="w-full gap-2"
+                className="w-full gap-2 animate-in slide-in-from-bottom-4 duration-500"
                 size="lg"
               >
                 <MessageSquare className="w-4 h-4" />

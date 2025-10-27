@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { getToolById } from '@/api/tools';
 import { createWebhookForAutomation } from '@/api/webhooks';
+import { extractErrorMessage, apiCall } from '@/lib/error-handler';
 
 // Custom Edge with delete button
 function CustomEdge({
@@ -242,8 +243,16 @@ export function WorkflowEditor({
       const newNodeId = `node-${nodeIdCounter.current++}`;
       const position = getNewNodePosition();
 
-      // Fetch real tool data from API
-      const toolData = await getToolById(tool.id);
+      // Fetch real tool data from API with error handling
+      const toolData = await apiCall(() => getToolById(tool.id));
+      if (!toolData) {
+        toast({
+          title: 'Erro ao carregar tool',
+          description: 'Não foi possível carregar os dados da tool. Tente novamente.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       let toolIdToUse = tool.id;
       let initialConfig: Record<string, any> = {};
@@ -251,10 +260,21 @@ export function WorkflowEditor({
       // If it's a webhook trigger, create a unique webhook for this automation
       if (tool.name === 'WebHookTrigger' && automationId) {
         try {
-          const webhook = await createWebhookForAutomation(automationId, {
-            method: 'POST',
-            inputs: {},
-          });
+          const webhook = await apiCall(() =>
+            createWebhookForAutomation(automationId, {
+              method: 'POST',
+              inputs: {},
+            })
+          );
+
+          if (!webhook) {
+            toast({
+              title: 'Erro ao criar webhook',
+              description: 'Não foi possível criar o webhook. Tente novamente.',
+              variant: 'destructive',
+            });
+            return;
+          }
 
           // Use the new webhook tool ID instead of the generic one
           toolIdToUse = webhook.id;
@@ -275,7 +295,7 @@ export function WorkflowEditor({
           console.error('Error creating webhook:', error);
           toast({
             title: 'Erro ao criar webhook',
-            description: error.response?.data?.error || error.message,
+            description: extractErrorMessage(error),
             variant: 'destructive',
           });
           return; // Don't add node if webhook creation failed
@@ -333,7 +353,7 @@ export function WorkflowEditor({
       console.error('Error adding tool:', error);
       toast({
         title: 'Erro ao adicionar tool',
-        description: error.response?.data?.error || error.message,
+        description: extractErrorMessage(error),
         variant: 'destructive',
       });
     }

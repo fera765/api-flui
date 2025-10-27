@@ -66,7 +66,7 @@ export function NodeConfigModal({
     }
   }, [nodeData]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!nodeData) return;
 
     // Validar campos obrigatórios
@@ -86,15 +86,15 @@ export function NodeConfigModal({
     if (missingFields.length > 0) {
       toast({
         title: 'Campos obrigatórios não preenchidos',
-        description: `Preencha ou vincule os campos: ${missingFields.join(', ')}`,
+        description: `Preencha ou vincule os seguintes campos: ${missingFields.join(', ')}`,
         variant: 'destructive',
       });
-      return;
+      return; // IMPORTANTE: Não permite salvar sem campos obrigatórios
     }
 
     setSaving(true);
     try {
-      onSave(nodeData.nodeId, config, linkedFields);
+      await onSave(nodeData.nodeId, config, linkedFields);
       toast({
         title: 'Configuração salva',
         description: 'As configurações do nó foram salvas com sucesso',
@@ -103,7 +103,7 @@ export function NodeConfigModal({
     } catch (error: any) {
       toast({
         title: 'Erro ao salvar',
-        description: error.message,
+        description: error?.message || 'Ocorreu um erro ao salvar a configuração',
         variant: 'destructive',
       });
     } finally {
