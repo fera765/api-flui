@@ -69,8 +69,8 @@ export function LinkerPopover({
           Linker
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="p-3 border-b">
+      <PopoverContent className="w-80 p-0" align="end" sideOffset={5}>
+        <div className="p-3 border-b bg-background sticky top-0 z-10">
           <div className="relative">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -82,69 +82,71 @@ export function LinkerPopover({
           </div>
         </div>
 
-        <ScrollArea className="h-[300px]">
-          {filteredOutputs.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              {compatibleOutputs.length === 0 ? (
-                <>
-                  Nenhum output compatível disponível
-                  <p className="text-xs mt-1">
-                    Tipo esperado: <Badge variant="outline">{fieldType}</Badge>
-                  </p>
-                </>
-              ) : (
-                'Nenhum resultado encontrado'
-              )}
-            </div>
-          ) : (
-            <div className="p-2">
-              {filteredOutputs.map((node, nodeIndex) => (
-                <div key={node.nodeId} className="mb-3 last:mb-0">
-                  {/* Node Header */}
-                  <div className="px-2 py-1.5 bg-muted/50 rounded-md mb-2">
-                    <p className="text-xs font-semibold">{node.nodeName}</p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {node.outputs.length} {node.outputs.length === 1 ? 'output' : 'outputs'}
+        <ScrollArea className="max-h-[300px]">
+          <div className="p-2">
+            {filteredOutputs.length === 0 ? (
+              <div className="text-center py-8 px-4 text-sm text-muted-foreground">
+                {compatibleOutputs.length === 0 ? (
+                  <>
+                    Nenhum output compatível disponível
+                    <p className="text-xs mt-1">
+                      Tipo esperado: <Badge variant="outline">{fieldType}</Badge>
                     </p>
-                  </div>
+                  </>
+                ) : (
+                  'Nenhum resultado encontrado'
+                )}
+              </div>
+            ) : (
+              <>
+                {filteredOutputs.map((node, nodeIndex) => (
+                  <div key={node.nodeId} className="mb-3 last:mb-0">
+                    {/* Node Header */}
+                    <div className="px-2 py-1.5 bg-muted/50 rounded-md mb-2">
+                      <p className="text-xs font-semibold">{node.nodeName}</p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {node.outputs.length} {node.outputs.length === 1 ? 'output' : 'outputs'}
+                      </p>
+                    </div>
 
-                  {/* Outputs */}
-                  <div className="space-y-1">
-                    {node.outputs.map((output) => (
-                      <button
-                        key={output.key}
-                        onClick={() => handleSelectOutput(node.nodeId, node.nodeName, output.key)}
-                        className={cn(
-                          'w-full text-left px-2 py-2 rounded-md',
-                          'hover:bg-accent transition-colors',
-                          'flex items-center justify-between group'
-                        )}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{output.key}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <Badge variant="outline" className="text-[10px] px-1">
-                              {output.type}
-                            </Badge>
-                            {output.value !== undefined && (
-                              <span className="text-xs text-muted-foreground truncate">
-                                = {String(output.value).substring(0, 30)}
-                              </span>
-                            )}
+                    {/* Outputs */}
+                    <div className="space-y-1">
+                      {node.outputs.map((output) => (
+                        <button
+                          key={output.key}
+                          onClick={() => handleSelectOutput(node.nodeId, node.nodeName, output.key)}
+                          className={cn(
+                            'w-full text-left px-2 py-2 rounded-md',
+                            'hover:bg-accent transition-colors',
+                            'flex items-center justify-between group'
+                          )}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{output.key}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <Badge variant="outline" className="text-[10px] px-1">
+                                {output.type}
+                              </Badge>
+                              {output.value !== undefined && (
+                                <span className="text-xs text-muted-foreground truncate">
+                                  = {String(output.value).substring(0, 30)}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <LinkIcon className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-2" />
-                      </button>
-                    ))}
-                  </div>
+                          <LinkIcon className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity ml-2" />
+                        </button>
+                      ))}
+                    </div>
 
-                  {nodeIndex < filteredOutputs.length - 1 && (
-                    <Separator className="my-3" />
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                    {nodeIndex < filteredOutputs.length - 1 && (
+                      <Separator className="my-3" />
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
         </ScrollArea>
       </PopoverContent>
     </Popover>

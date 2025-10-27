@@ -27,9 +27,10 @@ export class AutomationService implements IAutomationService {
       throw new AppError('Automation name is required', 400);
     }
 
-    if (!props.nodes || props.nodes.length === 0) {
-      throw new AppError('Automation must have at least one node', 400);
-    }
+    // Allow creating automation without nodes initially (can be populated later via editor)
+    // if (!props.nodes || props.nodes.length === 0) {
+    //   throw new AppError('Automation must have at least one node', 400);
+    // }
 
     // Check for duplicate name
     const existing = await this.repository.findByName(props.name);
@@ -37,10 +38,12 @@ export class AutomationService implements IAutomationService {
       throw new AppError('Automation with this name already exists', 400);
     }
 
-    // Validate that at least one trigger node exists
-    const hasTrigger = props.nodes.some(node => node.type === 'trigger');
-    if (!hasTrigger) {
-      throw new AppError('Automation must have at least one trigger node', 400);
+    // Validate that at least one trigger node exists (only if nodes are provided)
+    if (props.nodes && props.nodes.length > 0) {
+      const hasTrigger = props.nodes.some(node => node.type === 'trigger');
+      if (!hasTrigger) {
+        throw new AppError('Automation must have at least one trigger node', 400);
+      }
     }
 
     const automation = await this.repository.create(props);
