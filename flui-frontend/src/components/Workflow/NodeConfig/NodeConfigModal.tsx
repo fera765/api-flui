@@ -119,6 +119,7 @@ export function NodeConfigModal({
 
   const schema = nodeData.inputSchema?.properties || {};
   const required = nodeData.inputSchema?.required || [];
+  const schemaDescription = (nodeData.inputSchema as any)?.description;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -134,8 +135,15 @@ export function NodeConfigModal({
 
         <ScrollArea className="max-h-[400px] px-6">
           {Object.keys(schema).length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Este nó não possui campos configuráveis
+            <div className="text-center py-8 space-y-2">
+              <div className="text-muted-foreground">
+                {schemaDescription || 'Este nó não possui campos configuráveis'}
+              </div>
+              {schemaDescription && (
+                <div className="text-xs text-muted-foreground/70">
+                  {nodeData.nodeName}
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4 pb-4">

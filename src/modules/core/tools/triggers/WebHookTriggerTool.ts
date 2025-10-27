@@ -35,8 +35,33 @@ export function createWebHookTriggerTool(
     config,
     inputSchema: {
       type: 'object',
-      properties: inputs || {},
-      additionalProperties: true,
+      properties: {
+        url: {
+          type: 'string',
+          description: 'Webhook endpoint URL (gerado automaticamente)',
+          readOnly: true,
+        },
+        token: {
+          type: 'string',
+          description: 'API Key para autenticação do webhook (gerado automaticamente)',
+          readOnly: true,
+        },
+        method: {
+          type: 'string',
+          enum: ['GET', 'POST'],
+          description: 'Método HTTP para o webhook',
+          default: 'POST',
+        },
+        inputs: {
+          type: 'object',
+          description: 'Campos esperados no payload do webhook (pares chave-tipo)',
+          additionalProperties: {
+            type: 'string',
+            enum: ['string', 'number', 'array', 'object'],
+          },
+        },
+      },
+      required: ['url', 'token', 'method'],
     },
     outputSchema: {
       type: 'object',

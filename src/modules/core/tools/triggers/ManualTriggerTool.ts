@@ -11,6 +11,7 @@ export function createManualTriggerTool(config?: TriggerManualConfig): SystemToo
     inputSchema: {
       type: 'object',
       properties: {},
+      description: 'Este trigger não possui configurações. Execute manualmente através da interface ou API.',
       additionalProperties: true,
     },
     outputSchema: {

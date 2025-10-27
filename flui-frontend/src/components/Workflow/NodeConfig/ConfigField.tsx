@@ -169,6 +169,35 @@ export function ConfigField({
       return <InputsArrayField value={value} onChange={onChange} />;
     }
 
+    // Special field: method (HTTP method with enum)
+    if (fieldName === 'method' && fieldSchema.enum) {
+      return (
+        <div className="flex gap-3">
+          {fieldSchema.enum.map((option: string) => (
+            <label
+              key={option}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 rounded-lg border-2 cursor-pointer transition-all',
+                value === option
+                  ? 'border-primary bg-primary/10 text-primary font-medium'
+                  : 'border-border hover:border-primary/50 hover:bg-accent'
+              )}
+            >
+              <input
+                type="radio"
+                name={fieldName}
+                value={option}
+                checked={value === option}
+                onChange={(e) => onChange(e.target.value)}
+                className="sr-only"
+              />
+              <span className="font-mono text-sm">{option}</span>
+            </label>
+          ))}
+        </div>
+      );
+    }
+
     // Regular fields
     switch (fieldType) {
       case 'boolean':
