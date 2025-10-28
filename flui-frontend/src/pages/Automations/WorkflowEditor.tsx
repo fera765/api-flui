@@ -15,8 +15,10 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { CustomNode, CustomNodeData } from '@/components/Workflow/CustomNode';
+import { ConditionNode, ConditionNodeData } from '@/components/Workflow/ConditionNode';
 import { ToolSearchModal, ToolItem } from '@/components/Workflow/ToolSearchModal';
 import { NodeConfigModal, NodeConfigData, LinkedField, AvailableOutput } from '@/components/Workflow/NodeConfig/NodeConfigModal';
+import { ConditionConfigModal } from '@/components/Workflow/NodeConfig/ConditionConfigModal';
 import { Button } from '@/components/ui/button';
 import { Plus, X, Save, Play } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -96,6 +98,7 @@ function CustomEdge({
 
 const nodeTypes = {
   custom: CustomNode,
+  condition: ConditionNode,
 };
 
 const edgeTypes = {
@@ -121,6 +124,7 @@ export function WorkflowEditor({
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [modalOpen, setModalOpen] = useState(false);
   const [configModalOpen, setConfigModalOpen] = useState(false);
+  const [conditionModalOpen, setConditionModalOpen] = useState(false);
   const [currentConfigNode, setCurrentConfigNode] = useState<NodeConfigData | null>(null);
   const nodeIdCounter = useRef(1);
   const { toast } = useToast();
@@ -157,7 +161,13 @@ export function WorkflowEditor({
       outputSchema: node.data.outputSchema,
       linkedFields: (node.data as any).linkedFields || {},
     });
-    setConfigModalOpen(true);
+
+    // Use modal específico para Condition
+    if (node.data.type === 'condition') {
+      setConditionModalOpen(true);
+    } else {
+      setConfigModalOpen(true);
+    }
   };
 
   handleDeleteNodeRef.current = (nodeId: string) => {
@@ -194,6 +204,24 @@ export function WorkflowEditor({
       )
     );
   }, [setNodes]);
+
+  const handleSaveConditionConfig = useCallback(async (config: any) => {
+    if (!currentConfigNode) return;
+
+    setNodes((nds) =>
+      nds.map((node) =>
+        node.id === currentConfigNode.nodeId
+          ? {
+              ...node,
+              data: {
+                ...node.data,
+                config,
+              } as ConditionNodeData,
+            }
+          : node
+      )
+    );
+  }, [currentConfigNode, setNodes]);
 
   // Helper function to get outputs from a node (must be defined before useMemo)
   const getNodeOutputs = useCallback((node: Node<CustomNodeData>) => {
@@ -302,9 +330,12 @@ export function WorkflowEditor({
         }
       }
 
-      const newNode: Node<CustomNodeData> = {
+      // Use 'condition' node type se for condition, senão 'custom'
+      const nodeType = tool.type === 'condition' ? 'condition' : 'custom';
+
+      const newNode: Node<CustomNodeData | ConditionNodeData> = {
         id: newNodeId,
-        type: 'custom',
+        type: nodeType,
         position,
         data: {
           label: tool.name,
@@ -313,12 +344,12 @@ export function WorkflowEditor({
           description: tool.description,
           isFirst: nodes.length === 0,
           toolId: toolIdToUse, // Use webhook ID if created, otherwise original tool ID
-          config: initialConfig, // Pre-filled for webhooks
+          config: initialConfig, // Pre-filled for webhooks or empty for condition
           inputSchema: toolData.inputSchema || { type: 'object', properties: {} },
           outputSchema: toolData.outputSchema || { type: 'object', properties: {} },
           onConfigure: handleConfigure,
           onDelete: handleDeleteNode,
-        },
+        } as any,
       };
 
       setNodes((nds) => [...nds, newNode]);
@@ -493,6 +524,23 @@ export function WorkflowEditor({
         availableOutputs={availableOutputs}
         onSave={handleSaveConfig}
       />
+
+      {/* Condition Config Modal */}
+      {currentConfigNode && (
+        <ConditionConfigModal
+          open={conditionModalOpen}
+          onClose={() => setConditionModalOpen(false)}
+          nodeId={currentConfigNode.nodeId}
+          nodeName={currentConfigNode.nodeName}
+          config={{
+            inputField: currentConfigNode.config.inputField,
+            inputSource: currentConfigNode.config.inputSource,
+            conditions: currentConfigNode.config.conditions || [],
+          }}
+          availableOutputs={availableOutputs}
+          onSave={handleSaveConditionConfig}
+        />
+      )}
 
       {/* Empty State */}
       {!hasNodes && (
