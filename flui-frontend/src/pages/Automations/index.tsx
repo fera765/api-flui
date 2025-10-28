@@ -45,6 +45,7 @@ import {
   NodeType,
 } from '@/api/automations';
 import { useToast } from '@/hooks/use-toast';
+import { useEditor } from '@/contexts/EditorContext';
 import { WorkflowEditor } from './WorkflowEditor';
 import { Node, Edge } from 'reactflow';
 import { CustomNodeData } from '@/components/Workflow/CustomNode';
@@ -65,10 +66,16 @@ const Automations = () => {
   const [errors, setErrors] = useState<{ name?: string }>({});
 
   const { toast } = useToast();
+  const editor = useEditor();
 
   useEffect(() => {
     loadAutomations();
   }, []);
+  
+  // ✅ Sincronizar editorOpen com EditorContext
+  useEffect(() => {
+    editor.setIsEditorOpen(editorOpen);
+  }, [editorOpen, editor]);
 
   const loadAutomations = async () => {
     try {
@@ -100,34 +107,54 @@ const Automations = () => {
     setDialogOpen(true);
   };
 
-  const openWorkflowEditor = (automation?: Automation) => {
+  const openWorkflowEditor = async (automation?: Automation) => {
     if (automation) {
       setEditingAutomation(automation);
       setName(automation.name);
       setDescription(automation.description || '');
       
+      // Import getToolById
+      const { getToolById } = await import('@/api/tools');
+      
       // Convert backend nodes/links to React Flow format
-      const flowNodes: Node<CustomNodeData>[] = automation.nodes.map((node, index) => ({
-        id: node.id,
-        type: 'custom',
-        position: { x: index * 350 + 100, y: 250 },
-        data: {
-          label: `Node ${index + 1}`,
-          type: node.type as CustomNodeData['type'],
-          description: JSON.stringify(node.config),
-          isFirst: index === 0,
-          toolId: node.referenceId,
-          config: node.config || {},
-          inputSchema: {
-            type: 'object',
-            properties: {},
-          },
-          outputSchema: {
-            type: 'object',
-            properties: {},
-          },
-        },
-      }));
+      // Fetch tool data for each node to get proper schemas
+      const flowNodes: Node<CustomNodeData>[] = await Promise.all(
+        automation.nodes.map(async (node, index) => {
+          let toolData = null;
+          let inputSchema = { type: 'object', properties: {} };
+          let outputSchema = { type: 'object', properties: {} };
+          
+          // Try to fetch tool data if we have a referenceId
+          if (node.referenceId) {
+            try {
+              toolData = await getToolById(node.referenceId);
+              inputSchema = toolData.inputSchema || inputSchema;
+              outputSchema = toolData.outputSchema || outputSchema;
+            } catch (error) {
+              console.warn(`Failed to load tool data for ${node.referenceId}:`, error);
+            }
+          }
+          
+          // ✅ Detectar Condition + usar posição salva
+          const isConditionNode = toolData?.name === 'Condition' || node.type === NodeType.CONDITION;
+          
+          return {
+            id: node.id,
+            type: isConditionNode ? 'condition' : 'custom',
+            position: node.position || { x: index * 350 + 100, y: 250 },
+            data: {
+              label: toolData?.name || `Node ${index + 1}`,
+              type: node.type as CustomNodeData['type'],
+              description: toolData?.description || '',
+              isFirst: index === 0,
+              toolId: node.referenceId,
+              config: node.config || {},
+              inputSchema,
+              outputSchema,
+            },
+          };
+        })
+      );
 
       const flowEdges: Edge[] = automation.links.map((link) => ({
         id: `edge-${link.fromNodeId}-${link.toNodeId}`,
@@ -146,6 +173,13 @@ const Automations = () => {
       setWorkflowNodes([]);
       setWorkflowEdges([]);
     }
+    
+    // ✅ NOVA ARQUITETURA: Atualizar context ANTES de abrir
+    editor.setAutomationId(automation?.id);
+    editor.setAutomationName(automation?.name || name);
+    editor.setOnBack(() => () => {
+      setEditorOpen(false);
+    });
     
     setEditorOpen(true);
   };
@@ -218,13 +252,15 @@ const Automations = () => {
       setSaving(true);
 
       // Convert React Flow format to backend format
+      // ✅ FEATURE 2: Salvar posição dos nós
       const backendNodes: NodeData[] = nodes.map((node) => ({
         id: node.id,
         type: node.data.type === 'trigger' ? NodeType.TRIGGER : 
               node.data.type === 'agent' ? NodeType.AGENT :
               node.data.type === 'condition' ? NodeType.CONDITION : NodeType.TOOL,
         referenceId: node.data.toolId || node.id,
-        config: node.data.config || {},
+        config: node.data.config || {}, // ✅ FEATURE 1: config completa salva
+        position: { x: node.position.x, y: node.position.y }, // ✅ FEATURE 2: posição salva!
       }));
 
       // Build links from edges and linkedFields
@@ -262,22 +298,20 @@ const Automations = () => {
 
       if (editingAutomation) {
         const updated = await updateAutomation(editingAutomation.id, payload);
+        // ✅ REPLACE: Atualizar apenas o estado local, sem reload
+        setEditingAutomation(updated);
         setAutomations(automations.map((a) => (a.id === updated.id ? updated : a)));
-        toast({
-          title: 'Automação atualizada',
-          description: `A automação "${updated.name}" foi atualizada com sucesso`,
-        });
+        // ✅ REPLACE: SEM TOAST - feedback visual no botão
       } else {
         const created = await createAutomation(payload);
+        // ✅ REPLACE: Atualizar estado local
+        setEditingAutomation(created);
         setAutomations([...automations, created]);
-        toast({
-          title: 'Automação criada',
-          description: `A automação "${created.name}" foi criada com sucesso`,
-        });
+        // ✅ REPLACE: SEM TOAST - feedback visual no botão
       }
 
-      resetForm();
-      setEditorOpen(false);
+      // ✅ REPLACE: NÃO recarregar automações, NÃO limpar workflow
+      // Workflow permanece intacto após salvar!
     } catch (error: any) {
       console.error('Error saving automation:', error);
       toast({
@@ -329,6 +363,36 @@ const Automations = () => {
       setExecuting(null);
     }
   };
+  
+  // ✅ NOVA ARQUITETURA: Handler de exportação
+  const handleExportAutomation = async () => {
+    if (!editingAutomation) return;
+    
+    try {
+      const { exportAutomation } = await import('@/api/automations');
+      const blob = await exportAutomation(editingAutomation.id);
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `automation-${editingAutomation.id}-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: 'Exportado',
+        description: 'Automação exportada como JSON',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao exportar',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
 
   const getStatusBadge = (status: AutomationStatus) => {
     const variants = {
@@ -359,42 +423,21 @@ const Automations = () => {
     );
   }
 
-  // Editor Mode
+  // ✅ NOVA ARQUITETURA: Editor Mode (botões no Header)
   if (editorOpen) {
     return (
       <MainLayout>
-        <div className="h-[calc(100vh-4rem)] flex flex-col">
-          {/* Editor Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-background">
-            <div>
-              <h1 className="text-2xl font-bold">{name || 'Nova Automação'}</h1>
-              {description && (
-                <p className="text-sm text-muted-foreground mt-1">{description}</p>
-              )}
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setEditorOpen(false);
-                resetForm();
-              }}
-            >
-              Voltar
-            </Button>
-          </div>
-
-          {/* Workflow Editor */}
-          <div className="flex-1">
-            <ErrorBoundary>
-              <WorkflowEditor
-                automationId={editingAutomation?.id}
-                initialNodes={workflowNodes}
-                initialEdges={workflowEdges}
-                onSave={handleWorkflowSave}
-                onExecute={() => editingAutomation && handleExecute(editingAutomation.id, editingAutomation.name)}
-              />
-            </ErrorBoundary>
-          </div>
+        <div className="h-[calc(100vh-4rem)]">
+          <ErrorBoundary>
+            <WorkflowEditor
+              automationId={editingAutomation?.id}
+              initialNodes={workflowNodes}
+              initialEdges={workflowEdges}
+              onSave={handleWorkflowSave}
+              onExecute={() => editingAutomation && handleExecute(editingAutomation.id, editingAutomation.name)}
+              onExport={handleExportAutomation}
+            />
+          </ErrorBoundary>
         </div>
       </MainLayout>
     );

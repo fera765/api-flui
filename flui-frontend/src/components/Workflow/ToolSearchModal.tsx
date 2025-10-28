@@ -12,7 +12,6 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Search, Loader2, Zap, Wrench, Bot, Package, GitBranch } from 'lucide-react';
 import { getAllTools, Tool, MCPTools, AgentTools } from '@/api/tools';
-import { getAllConditionTools, ConditionTool } from '@/api/conditions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -44,7 +43,6 @@ export function ToolSearchModal({
   const [systemTools, setSystemTools] = useState<Tool[]>([]);
   const [mcpTools, setMcpTools] = useState<MCPTools[]>([]);
   const [agentTools, setAgentTools] = useState<AgentTools[]>([]);
-  const [conditionTools, setConditionTools] = useState<ConditionTool[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -57,15 +55,11 @@ export function ToolSearchModal({
   const loadAllTools = async () => {
     try {
       setLoading(true);
-      const [toolsData, conditions] = await Promise.all([
-        getAllTools({ category: 'all', pageSize: 1000 }),
-        getAllConditionTools(),
-      ]);
+      const toolsData = await getAllTools({ category: 'all', pageSize: 1000 });
 
       setSystemTools(toolsData.tools.system || []);
       setMcpTools(toolsData.tools.mcps || []);
       setAgentTools(toolsData.tools.agents || []);
-      setConditionTools(conditions || []);
     } catch (error: any) {
       console.error('Error loading tools:', error);
       toast({
@@ -81,9 +75,19 @@ export function ToolSearchModal({
   const allToolItems = useMemo((): ToolItem[] => {
     const items: ToolItem[] = [];
 
-    // System Tools
+    // System Tools (filtrar webhooks duplicados)
+    const seenWebhooks = new Set<string>();
     systemTools.forEach(tool => {
       const isTrigger = tool.type === 'trigger';
+      
+      // Se for webhook, só adicionar o primeiro (genérico)
+      if (tool.name === 'WebHookTrigger') {
+        if (seenWebhooks.has('WebHookTrigger')) {
+          return; // Skip duplicados
+        }
+        seenWebhooks.add('WebHookTrigger');
+      }
+      
       if (!showOnlyTriggers || isTrigger) {
         items.push({
           id: tool.id,
@@ -96,17 +100,6 @@ export function ToolSearchModal({
     });
 
     if (!showOnlyTriggers) {
-      // Condition Tools
-      conditionTools.forEach(condition => {
-        items.push({
-          id: condition.id,
-          name: condition.name,
-          description: condition.description,
-          type: 'condition',
-          subtype: 'atoom',
-        });
-      });
-
       // Agent Tools
       agentTools.forEach(agentData => {
         items.push({
@@ -137,7 +130,7 @@ export function ToolSearchModal({
     }
 
     return items;
-  }, [systemTools, mcpTools, agentTools, conditionTools, showOnlyTriggers]);
+  }, [systemTools, mcpTools, agentTools, showOnlyTriggers]);
 
   const filteredTools = useMemo(() => {
     if (!searchQuery.trim()) return allToolItems;
