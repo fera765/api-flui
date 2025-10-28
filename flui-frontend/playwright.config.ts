@@ -38,7 +38,7 @@ export default defineConfig({
   // Configuração compartilhada para todos os projetos
   use: {
     // URL base da aplicação
-    baseURL: process.env.BASE_URL || 'http://localhost:5173',
+    baseURL: process.env.BASE_URL || 'http://localhost:8080',
     
     // Capturar screenshot apenas em falhas
     screenshot: 'only-on-failure',

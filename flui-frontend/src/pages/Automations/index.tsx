@@ -118,6 +118,22 @@ const Automations = () => {
       
       // Convert backend nodes/links to React Flow format
       // Fetch tool data for each node to get proper schemas
+      
+      // ✅ FIX BUG #1: Reconstruir linkedFields a partir dos links do backend
+      const linkedFieldsByNode = new Map<string, Record<string, any>>();
+      automation.links.forEach((link) => {
+        // Se não for um link genérico (output -> input), é um linkedField específico
+        if (link.fromOutputKey !== 'output' || link.toInputKey !== 'input') {
+          if (!linkedFieldsByNode.has(link.toNodeId)) {
+            linkedFieldsByNode.set(link.toNodeId, {});
+          }
+          linkedFieldsByNode.get(link.toNodeId)![link.toInputKey] = {
+            sourceNodeId: link.fromNodeId,
+            outputKey: link.fromOutputKey,
+          };
+        }
+      });
+      
       const flowNodes: Node<CustomNodeData>[] = await Promise.all(
         automation.nodes.map(async (node, index) => {
           let toolData = null;
@@ -138,6 +154,34 @@ const Automations = () => {
           // ✅ Detectar Condition + usar posição salva
           const isConditionNode = toolData?.name === 'Condition' || node.type === NodeType.CONDITION;
           
+          // ✅ FIX BUG CONDITION: Reconstruir inputSource do config para Condition nodes
+          let nodeConfig = node.config || {};
+          if (isConditionNode) {
+            const conditionInputLink = linkedFieldsByNode.get(node.id)?.['input'];
+            if (conditionInputLink) {
+              // Buscar o nome do node de origem
+              const sourceNode = automation.nodes.find(n => n.id === conditionInputLink.sourceNodeId);
+              const sourceNodeName = sourceNode ? (await (async () => {
+                try {
+                  const sourceTool = await getToolById(sourceNode.referenceId);
+                  return sourceTool?.name || sourceNode.id;
+                } catch {
+                  return sourceNode.id;
+                }
+              })()) : conditionInputLink.sourceNodeId;
+              
+              nodeConfig = {
+                ...nodeConfig,
+                inputField: `${sourceNodeName}.${conditionInputLink.outputKey}`,
+                inputSource: {
+                  sourceNodeId: conditionInputLink.sourceNodeId,
+                  sourceNodeName,
+                  outputKey: conditionInputLink.outputKey,
+                },
+              };
+            }
+          }
+          
           return {
             id: node.id,
             type: isConditionNode ? 'condition' : 'custom',
@@ -148,7 +192,8 @@ const Automations = () => {
               description: toolData?.description || '',
               isFirst: index === 0,
               toolId: node.referenceId,
-              config: node.config || {},
+              config: nodeConfig, // ✅ Config com inputSource reconstruído
+              linkedFields: linkedFieldsByNode.get(node.id) || {}, // ✅ FIX: Restaurar linkedFields
               inputSchema,
               outputSchema,
             },
@@ -156,13 +201,15 @@ const Automations = () => {
         })
       );
 
-      const flowEdges: Edge[] = automation.links.map((link) => ({
-        id: `edge-${link.fromNodeId}-${link.toNodeId}`,
-        source: link.fromNodeId,
-        target: link.toNodeId,
-        type: 'custom',
-        animated: true,
-      }));
+      const flowEdges: Edge[] = automation.links
+        .filter((link) => link.fromOutputKey === 'output' && link.toInputKey === 'input') // ✅ Apenas links visuais
+        .map((link) => ({
+          id: `edge-${link.fromNodeId}-${link.toNodeId}`,
+          source: link.fromNodeId,
+          target: link.toNodeId,
+          type: 'custom',
+          animated: true,
+        }));
 
       setWorkflowNodes(flowNodes);
       setWorkflowEdges(flowEdges);
@@ -179,6 +226,8 @@ const Automations = () => {
     editor.setAutomationName(automation?.name || name);
     editor.setOnBack(() => () => {
       setEditorOpen(false);
+      // ✅ Reload automations after closing editor
+      loadAutomations();
     });
     
     setEditorOpen(true);
@@ -263,30 +312,54 @@ const Automations = () => {
         position: { x: node.position.x, y: node.position.y }, // ✅ FEATURE 2: posição salva!
       }));
 
-      // Build links from edges and linkedFields
+      // Build links from edges and linkedFields (deduplicated)
       const backendLinks: LinkData[] = [];
+      const linkSet = new Set<string>();
       
-      // Add visual connections
+      // Add visual connections (edges)
       edges.forEach((edge) => {
-        backendLinks.push({
-          fromNodeId: edge.source!,
-          fromOutputKey: 'output',
-          toNodeId: edge.target!,
-          toInputKey: 'input',
-        });
+        const linkKey = `${edge.source!}-output-${edge.target!}-input`;
+        if (!linkSet.has(linkKey)) {
+          backendLinks.push({
+            fromNodeId: edge.source!,
+            fromOutputKey: 'output',
+            toNodeId: edge.target!,
+            toInputKey: 'input',
+          });
+          linkSet.add(linkKey);
+        }
       });
 
-      // Add data links (linkedFields)
+      // Add data links (linkedFields) - these override generic links
       nodes.forEach((node) => {
         const linkedFields = (node.data as any).linkedFields || {};
         Object.entries(linkedFields).forEach(([inputKey, link]: [string, any]) => {
-          backendLinks.push({
-            fromNodeId: link.sourceNodeId,
-            fromOutputKey: link.outputKey,
-            toNodeId: node.id,
-            toInputKey: inputKey,
-          });
+          const linkKey = `${link.sourceNodeId}-${link.outputKey}-${node.id}-${inputKey}`;
+          if (!linkSet.has(linkKey)) {
+            backendLinks.push({
+              fromNodeId: link.sourceNodeId,
+              fromOutputKey: link.outputKey,
+              toNodeId: node.id,
+              toInputKey: inputKey,
+            });
+            linkSet.add(linkKey);
+          }
         });
+        
+        // ✅ FIX BUG CONDITION: Handle Condition node inputSource as linkedField
+        if (node.data.type === 'condition' && node.data.config?.inputSource) {
+          const inputSource = node.data.config.inputSource;
+          const linkKey = `${inputSource.sourceNodeId}-${inputSource.outputKey}-${node.id}-input`;
+          if (!linkSet.has(linkKey)) {
+            backendLinks.push({
+              fromNodeId: inputSource.sourceNodeId,
+              fromOutputKey: inputSource.outputKey,
+              toNodeId: node.id,
+              toInputKey: 'input', // Condition node uses 'input' as the key
+            });
+            linkSet.add(linkKey);
+          }
+        }
       });
 
       const payload = {
