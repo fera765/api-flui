@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, X, Link as LinkIcon, Unlink, Copy, Eye, EyeOff, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LinkedField, AvailableOutput } from './NodeConfigModal';
-import { LinkerPopover } from './LinkerPopover';
+import { LinkerModal } from './LinkerModal';
 import { InputsArrayField } from './InputsArrayField';
 import { useToast } from '@/hooks/use-toast';
 
@@ -39,6 +39,7 @@ export function ConfigField({
   );
   const [showSecret, setShowSecret] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [linkerModalOpen, setLinkerModalOpen] = useState(false);
   const { toast } = useToast();
 
   const isLinked = !!linkedField;
@@ -362,13 +363,25 @@ export function ConfigField({
           )}
         </Label>
 
-        {!isReadOnly && !isLinked && fieldType !== 'array' && availableOutputs.length > 0 && (
-          <LinkerPopover
-            fieldName={fieldName}
-            fieldType={fieldType}
-            availableOutputs={availableOutputs}
-            onLink={onLink}
-          />
+        {!isReadOnly && fieldType !== 'array' && availableOutputs.length > 0 && (
+          <Button
+            size="sm"
+            variant={isLinked ? "default" : "outline"}
+            onClick={() => setLinkerModalOpen(true)}
+            className="h-7 gap-1.5 text-xs"
+          >
+            {isLinked ? (
+              <>
+                <Check className="w-3 h-3" />
+                Vinculado
+              </>
+            ) : (
+              <>
+                <LinkIcon className="w-3 h-3" />
+                Linker
+              </>
+            )}
+          </Button>
         )}
       </div>
 
@@ -377,6 +390,24 @@ export function ConfigField({
       )}
 
       {renderField()}
+
+      {/* Linker Modal */}
+      <LinkerModal
+        open={linkerModalOpen}
+        onClose={() => setLinkerModalOpen(false)}
+        fieldName={fieldName}
+        fieldType={fieldType}
+        availableOutputs={availableOutputs}
+        currentLink={linkedField}
+        onLink={(link) => {
+          onLink(link);
+          setLinkerModalOpen(false);
+        }}
+        onUnlink={() => {
+          onLink(null);
+          setLinkerModalOpen(false);
+        }}
+      />
     </div>
   );
 }

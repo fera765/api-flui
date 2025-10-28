@@ -24,7 +24,7 @@ export interface Predicate {
 export interface Condition {
   id: string;
   name: string;
-  predicate: Predicate;
+  predicate: string | Predicate; // API retorna string, mas também aceita objeto
   linkedNodes: string[];
 }
 
