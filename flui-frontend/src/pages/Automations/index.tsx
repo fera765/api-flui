@@ -154,6 +154,34 @@ const Automations = () => {
           // ✅ Detectar Condition + usar posição salva
           const isConditionNode = toolData?.name === 'Condition' || node.type === NodeType.CONDITION;
           
+          // ✅ FIX BUG CONDITION: Reconstruir inputSource do config para Condition nodes
+          let nodeConfig = node.config || {};
+          if (isConditionNode) {
+            const conditionInputLink = linkedFieldsByNode.get(node.id)?.['input'];
+            if (conditionInputLink) {
+              // Buscar o nome do node de origem
+              const sourceNode = automation.nodes.find(n => n.id === conditionInputLink.sourceNodeId);
+              const sourceNodeName = sourceNode ? (await (async () => {
+                try {
+                  const sourceTool = await getToolById(sourceNode.referenceId);
+                  return sourceTool?.name || sourceNode.id;
+                } catch {
+                  return sourceNode.id;
+                }
+              })()) : conditionInputLink.sourceNodeId;
+              
+              nodeConfig = {
+                ...nodeConfig,
+                inputField: `${sourceNodeName}.${conditionInputLink.outputKey}`,
+                inputSource: {
+                  sourceNodeId: conditionInputLink.sourceNodeId,
+                  sourceNodeName,
+                  outputKey: conditionInputLink.outputKey,
+                },
+              };
+            }
+          }
+          
           return {
             id: node.id,
             type: isConditionNode ? 'condition' : 'custom',
@@ -164,7 +192,7 @@ const Automations = () => {
               description: toolData?.description || '',
               isFirst: index === 0,
               toolId: node.referenceId,
-              config: node.config || {},
+              config: nodeConfig, // ✅ Config com inputSource reconstruído
               linkedFields: linkedFieldsByNode.get(node.id) || {}, // ✅ FIX: Restaurar linkedFields
               inputSchema,
               outputSchema,
@@ -317,6 +345,21 @@ const Automations = () => {
             linkSet.add(linkKey);
           }
         });
+        
+        // ✅ FIX BUG CONDITION: Handle Condition node inputSource as linkedField
+        if (node.data.type === 'condition' && node.data.config?.inputSource) {
+          const inputSource = node.data.config.inputSource;
+          const linkKey = `${inputSource.sourceNodeId}-${inputSource.outputKey}-${node.id}-input`;
+          if (!linkSet.has(linkKey)) {
+            backendLinks.push({
+              fromNodeId: inputSource.sourceNodeId,
+              fromOutputKey: inputSource.outputKey,
+              toNodeId: node.id,
+              toInputKey: 'input', // Condition node uses 'input' as the key
+            });
+            linkSet.add(linkKey);
+          }
+        }
       });
 
       const payload = {

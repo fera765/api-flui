@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // API Base URL - pode ser configurado via variável de ambiente
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// ✅ FIX: Corrigido porta 3000 → 3333 (porta real do backend)
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333';
 
 // Create axios instance
 export const apiClient = axios.create({
