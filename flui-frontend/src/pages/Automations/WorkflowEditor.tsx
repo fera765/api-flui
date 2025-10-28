@@ -162,8 +162,9 @@ export function WorkflowEditor({
       linkedFields: (node.data as any).linkedFields || {},
     });
 
-    // Use modal específico para Condition
-    if (node.data.type === 'condition') {
+    // Use modal específico para Condition (detectar pelo nome da tool)
+    const isConditionTool = node.data.label === 'Condition' || node.data.subtype === 'condition';
+    if (isConditionTool) {
       setConditionModalOpen(true);
     } else {
       setConfigModalOpen(true);
@@ -330,8 +331,9 @@ export function WorkflowEditor({
         }
       }
 
-      // Use 'condition' node type se for condition, senão 'custom'
-      const nodeType = tool.type === 'condition' ? 'condition' : 'custom';
+      // Use 'condition' node type se for Condition tool (detectar pelo nome)
+      const isConditionTool = tool.name === 'Condition';
+      const nodeType = isConditionTool ? 'condition' : 'custom';
 
       const newNode: Node<CustomNodeData | ConditionNodeData> = {
         id: newNodeId,
@@ -339,8 +341,8 @@ export function WorkflowEditor({
         position,
         data: {
           label: tool.name,
-          type: tool.type as CustomNodeData['type'],
-          subtype: tool.subtype,
+          type: (isConditionTool ? 'condition' : tool.type) as CustomNodeData['type'],
+          subtype: isConditionTool ? 'condition' : tool.subtype,
           description: tool.description,
           isFirst: nodes.length === 0,
           toolId: toolIdToUse, // Use webhook ID if created, otherwise original tool ID

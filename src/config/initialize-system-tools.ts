@@ -24,6 +24,7 @@ import {
 import { createWebFetchTool } from '@modules/core/tools/actions/WebFetchTool';
 import { createShellTool } from '@modules/core/tools/actions/ShellTool';
 import { createEditTool } from '@modules/core/tools/actions/EditTool';
+import { createConditionTool } from '@modules/core/tools/actions/ConditionTool';
 
 /**
  * Initialize all native system tools
@@ -98,6 +99,12 @@ export async function initializeSystemTools(): Promise<void> {
     await systemToolRepository.create({
       ...createEditTool().toJSON(),
       executor: createEditTool().execute.bind(createEditTool()),
+    } as any);
+
+    // Condition Tool
+    await systemToolRepository.create({
+      ...createConditionTool().toJSON(),
+      executor: createConditionTool().execute.bind(createConditionTool()),
     } as any);
   } catch (error) {
     console.error('Error initializing system tools:', error);
