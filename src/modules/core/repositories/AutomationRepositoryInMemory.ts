@@ -14,6 +14,7 @@ export class AutomationRepositoryInMemory implements IAutomationRepository {
         type: nodeProps.type,
         referenceId: nodeProps.referenceId,
         config: nodeProps.config,
+        position: nodeProps.position, // ✅ FEATURE 2: Suporte a posição
       });
     });
 

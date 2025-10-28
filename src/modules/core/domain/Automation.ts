@@ -18,6 +18,7 @@ export interface NodeProps {
   referenceId: string;
   config?: Record<string, unknown>;
   outputs?: Record<string, unknown>;
+  position?: { x: number; y: number }; // ✅ FEATURE 2: Suporte a posição
 }
 
 export interface NodeResponse {
@@ -26,6 +27,7 @@ export interface NodeResponse {
   referenceId: string;
   config?: Record<string, unknown>;
   outputs?: Record<string, unknown>;
+  position?: { x: number; y: number }; // ✅ FEATURE 2: Suporte a posição
 }
 
 export class Node {
@@ -34,6 +36,7 @@ export class Node {
   private readonly referenceId: string;
   private config?: Record<string, unknown>;
   private outputs?: Record<string, unknown>;
+  private position?: { x: number; y: number }; // ✅ FEATURE 2: Suporte a posição
 
   constructor(props: NodeProps) {
     this.id = props.id;
@@ -41,6 +44,7 @@ export class Node {
     this.referenceId = props.referenceId;
     this.config = props.config;
     this.outputs = props.outputs;
+    this.position = props.position; // ✅ FEATURE 2: Suporte a posição
   }
 
   public getId(): string {
@@ -63,12 +67,20 @@ export class Node {
     return this.outputs;
   }
 
+  public getPosition(): { x: number; y: number } | undefined {
+    return this.position;
+  }
+
   public setOutputs(outputs: Record<string, unknown>): void {
     this.outputs = outputs;
   }
 
   public updateConfig(config: Record<string, unknown>): void {
     this.config = { ...this.config, ...config };
+  }
+
+  public updatePosition(position: { x: number; y: number }): void {
+    this.position = position;
   }
 
   public toJSON(): NodeResponse {
@@ -78,6 +90,7 @@ export class Node {
       referenceId: this.referenceId,
       config: this.config,
       outputs: this.outputs,
+      position: this.position, // ✅ FEATURE 2: Suporte a posição
     };
   }
 }

@@ -179,6 +179,8 @@ const Automations = () => {
     editor.setAutomationName(automation?.name || name);
     editor.setOnBack(() => () => {
       setEditorOpen(false);
+      // ✅ FEATURE 3: Recarregar automações ao voltar
+      loadAutomations();
     });
     
     setEditorOpen(true);
@@ -266,17 +268,25 @@ const Automations = () => {
       // Build links from edges and linkedFields
       const backendLinks: LinkData[] = [];
       
-      // Add visual connections
+      // Add visual connections (only if not already linked via linkedFields)
       edges.forEach((edge) => {
-        backendLinks.push({
-          fromNodeId: edge.source!,
-          fromOutputKey: 'output',
-          toNodeId: edge.target!,
-          toInputKey: 'input',
-        });
+        const targetNode = nodes.find(n => n.id === edge.target);
+        const hasLinkedField = targetNode && (targetNode.data as any).linkedFields && 
+          Object.values((targetNode.data as any).linkedFields).some((link: any) => 
+            link.sourceNodeId === edge.source
+          );
+        
+        if (!hasLinkedField) {
+          backendLinks.push({
+            fromNodeId: edge.source!,
+            fromOutputKey: 'output',
+            toNodeId: edge.target!,
+            toInputKey: 'input',
+          });
+        }
       });
 
-      // Add data links (linkedFields)
+      // Add data links (linkedFields) - these take priority
       nodes.forEach((node) => {
         const linkedFields = (node.data as any).linkedFields || {};
         Object.entries(linkedFields).forEach(([inputKey, link]: [string, any]) => {
