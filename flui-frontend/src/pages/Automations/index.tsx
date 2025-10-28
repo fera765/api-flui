@@ -45,6 +45,7 @@ import {
   NodeType,
 } from '@/api/automations';
 import { useToast } from '@/hooks/use-toast';
+import { useEditor } from '@/contexts/EditorContext';
 import { WorkflowEditor } from './WorkflowEditor';
 import { Node, Edge } from 'reactflow';
 import { CustomNodeData } from '@/components/Workflow/CustomNode';
@@ -65,6 +66,7 @@ const Automations = () => {
   const [errors, setErrors] = useState<{ name?: string }>({});
 
   const { toast } = useToast();
+  const editor = useEditor();
 
   useEffect(() => {
     loadAutomations();
@@ -128,20 +130,20 @@ const Automations = () => {
             }
           }
           
-          // ✅ FEATURE 1 & 2: Usar posição salva + detectar Condition
+          // ✅ Detectar Condition + usar posição salva
           const isConditionNode = toolData?.name === 'Condition' || node.type === NodeType.CONDITION;
           
           return {
             id: node.id,
-            type: isConditionNode ? 'condition' : 'custom', // ✅ FEATURE 1: tipo correto
-            position: node.position || { x: index * 350 + 100, y: 250 }, // ✅ FEATURE 2: posição salva
+            type: isConditionNode ? 'condition' : 'custom',
+            position: node.position || { x: index * 350 + 100, y: 250 },
             data: {
               label: toolData?.name || `Node ${index + 1}`,
               type: node.type as CustomNodeData['type'],
               description: toolData?.description || '',
               isFirst: index === 0,
               toolId: node.referenceId,
-              config: node.config || {}, // ✅ FEATURE 1: config completa preservada
+              config: node.config || {},
               inputSchema,
               outputSchema,
             },
@@ -168,6 +170,15 @@ const Automations = () => {
     }
     
     setEditorOpen(true);
+    
+    // ✅ NOVA ARQUITETURA: Atualizar context
+    editor.setIsEditorOpen(true);
+    editor.setAutomationId(automation?.id);
+    editor.setAutomationName(automation?.name || name);
+    editor.setOnBack(() => () => {
+      setEditorOpen(false);
+      editor.setIsEditorOpen(false);
+    });
   };
 
   const resetForm = () => {
@@ -284,26 +295,20 @@ const Automations = () => {
 
       if (editingAutomation) {
         const updated = await updateAutomation(editingAutomation.id, payload);
+        // ✅ REPLACE: Atualizar apenas o estado local, sem reload
+        setEditingAutomation(updated);
         setAutomations(automations.map((a) => (a.id === updated.id ? updated : a)));
-        toast({
-          title: 'Automação atualizada',
-          description: `A automação "${updated.name}" foi atualizada com sucesso`,
-        });
+        // ✅ REPLACE: SEM TOAST - feedback visual no botão
       } else {
         const created = await createAutomation(payload);
+        // ✅ REPLACE: Atualizar estado local
+        setEditingAutomation(created);
         setAutomations([...automations, created]);
-        toast({
-          title: 'Automação criada',
-          description: `A automação "${created.name}" foi criada com sucesso`,
-        });
+        // ✅ REPLACE: SEM TOAST - feedback visual no botão
       }
 
-      // ✅ FEATURE 4: NÃO fechar editor ao salvar
-      // resetForm();
-      // setEditorOpen(false);
-      
-      // Apenas recarregar automações para atualizar lista
-      await loadAutomations();
+      // ✅ REPLACE: NÃO recarregar automações, NÃO limpar workflow
+      // Workflow permanece intacto após salvar!
     } catch (error: any) {
       console.error('Error saving automation:', error);
       toast({
@@ -385,42 +390,21 @@ const Automations = () => {
     );
   }
 
-  // Editor Mode
+  // ✅ NOVA ARQUITETURA: Editor Mode (botões no Header)
   if (editorOpen) {
     return (
       <MainLayout>
-        <div className="h-[calc(100vh-4rem)] flex flex-col">
-          {/* Editor Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-background">
-            <div>
-              <h1 className="text-2xl font-bold">{name || 'Nova Automação'}</h1>
-              {description && (
-                <p className="text-sm text-muted-foreground mt-1">{description}</p>
-              )}
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setEditorOpen(false);
-                resetForm();
-              }}
-            >
-              Voltar
-            </Button>
-          </div>
-
-          {/* Workflow Editor */}
-          <div className="flex-1">
-            <ErrorBoundary>
-              <WorkflowEditor
-                automationId={editingAutomation?.id}
-                initialNodes={workflowNodes}
-                initialEdges={workflowEdges}
-                onSave={handleWorkflowSave}
-                onExecute={() => editingAutomation && handleExecute(editingAutomation.id, editingAutomation.name)}
-              />
-            </ErrorBoundary>
-          </div>
+        <div className="h-[calc(100vh-4rem)]">
+          <ErrorBoundary>
+            <WorkflowEditor
+              automationId={editingAutomation?.id}
+              initialNodes={workflowNodes}
+              initialEdges={workflowEdges}
+              onSave={handleWorkflowSave}
+              onExecute={() => editingAutomation && handleExecute(editingAutomation.id, editingAutomation.name)}
+              onExport={handleExportAutomation}
+            />
+          </ErrorBoundary>
         </div>
       </MainLayout>
     );

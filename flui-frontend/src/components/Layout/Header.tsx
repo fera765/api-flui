@@ -1,4 +1,4 @@
-import { Menu, Palette, Sun, Moon } from 'lucide-react';
+import { Menu, Palette, Sun, Moon, ArrowLeft, Save, MoreVertical, Play, Download, Loader2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,6 +10,8 @@ import {
 import { useTheme, themes, type ThemeName } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
+import { useEditor } from '@/contexts/EditorContext';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -18,10 +20,36 @@ interface HeaderProps {
 export function Header({ onMenuToggle }: HeaderProps) {
   const { theme: currentTheme, mode, setTheme, setMode } = useTheme();
   const location = useLocation();
+  const editor = useEditor();
   
-  // ✅ FEATURE 4: Esconder theme toggle no editor de automação
-  const isAutomationEditor = location.pathname.includes('/automations') && 
-                             window.location.search.includes('editor=true');
+  // ✅ NOVA ARQUITETURA: Detectar modo editor
+  const isInEditor = editor.isEditorOpen;
+  
+  // Handlers dos botões do editor
+  const handleSave = async () => {
+    if (editor.onSave) {
+      try {
+        editor.setSaveState('saving');
+        await editor.onSave();
+        editor.setSaveState('saved');
+        setTimeout(() => editor.setSaveState('idle'), 2000);
+      } catch (error) {
+        editor.setSaveState('idle');
+      }
+    }
+  };
+  
+  const handleExecute = async () => {
+    if (editor.onExecute) {
+      await editor.onExecute();
+    }
+  };
+  
+  const handleExport = async () => {
+    if (editor.onExport) {
+      await editor.onExport();
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -60,10 +88,73 @@ export function Header({ onMenuToggle }: HeaderProps) {
           </Link>
         </div>
 
-        {/* Right side - Theme selector */}
-        {/* ✅ FEATURE 4: Não mostrar no editor de automação */}
-        {!isAutomationEditor && (
-          <div className="flex items-center gap-2">
+        {/* Right side - Editor buttons OR Theme selector */}
+        <div className="flex items-center gap-2">
+          {/* ✅ NOVA ARQUITETURA: Botões do Editor */}
+          {isInEditor ? (
+            <>
+              {/* Botão Voltar */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={editor.onBack}
+                className="gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Voltar</span>
+              </Button>
+
+              {/* Botão Salvar (3 estados) */}
+              <Button
+                onClick={handleSave}
+                disabled={editor.saveState === 'saving'}
+                variant={editor.saveState === 'saved' ? 'default' : 'outline'}
+                size="sm"
+                className={cn(
+                  'gap-2 transition-all',
+                  editor.saveState === 'saved' && 'bg-green-600 hover:bg-green-700 text-white'
+                )}
+              >
+                {editor.saveState === 'saving' && <Loader2 className="w-4 h-4 animate-spin" />}
+                {editor.saveState === 'saved' && <Check className="w-4 h-4" />}
+                {editor.saveState === 'idle' && <Save className="w-4 h-4" />}
+                <span className="hidden sm:inline">
+                  {editor.saveState === 'saving' && 'Salvando...'}
+                  {editor.saveState === 'saved' && 'Salvo!'}
+                  {editor.saveState === 'idle' && 'Salvar'}
+                </span>
+              </Button>
+
+              {/* Menu 3 pontinhos */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={handleExport} className="gap-2 cursor-pointer">
+                    <Download className="w-4 h-4" />
+                    <span>Exportar</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Botão Executar */}
+              {editor.canExecute && (
+                <Button
+                  onClick={handleExecute}
+                  variant="default"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Play className="w-4 h-4" />
+                  <span className="hidden sm:inline">Executar</span>
+                </Button>
+              )}
+            </>
+          ) : (
+            // Botão tema (quando NÃO está no editor)
             <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
@@ -126,8 +217,8 @@ export function Header({ onMenuToggle }: HeaderProps) {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          )}
         </div>
-        )}
       </div>
     </header>
   );

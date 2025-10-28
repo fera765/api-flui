@@ -20,14 +20,9 @@ import { ToolSearchModal, ToolItem } from '@/components/Workflow/ToolSearchModal
 import { NodeConfigModal, NodeConfigData, LinkedField, AvailableOutput } from '@/components/Workflow/NodeConfig/NodeConfigModal';
 import { ConditionConfigModal } from '@/components/Workflow/NodeConfig/ConditionConfigModal';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Plus, X, Save, Play, Check, Loader2, MoreVertical, Download } from 'lucide-react';
+import { Plus, X, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useEditor } from '@/contexts/EditorContext';
 import { cn } from '@/lib/utils';
 import { getToolById } from '@/api/tools';
 import { createWebhookForAutomation } from '@/api/webhooks';
@@ -115,8 +110,9 @@ interface WorkflowEditorProps {
   automationId?: string;
   initialNodes?: Node<CustomNodeData>[];
   initialEdges?: Edge[];
-  onSave?: (nodes: Node<CustomNodeData>[], edges: Edge[]) => Promise<void>; // ✅ async
+  onSave?: (nodes: Node<CustomNodeData>[], edges: Edge[]) => Promise<void>;
   onExecute?: () => void;
+  onExport?: () => Promise<void>;
 }
 
 export function WorkflowEditor({
@@ -125,6 +121,7 @@ export function WorkflowEditor({
   initialEdges = [],
   onSave,
   onExecute,
+  onExport,
 }: WorkflowEditorProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState<CustomNodeData>(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -132,12 +129,44 @@ export function WorkflowEditor({
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [conditionModalOpen, setConditionModalOpen] = useState(false);
   const [currentConfigNode, setCurrentConfigNode] = useState<NodeConfigData | null>(null);
-  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle'); // ✅ FEATURE 4
   const nodeIdCounter = useRef(1);
   const { toast } = useToast();
+  const editor = useEditor();
 
   const hasNodes = nodes.length > 0;
   const hasTrigger = nodes.some(node => node.data.type === 'trigger');
+  
+  // ✅ NOVA ARQUITETURA: Registrar callbacks no context para Header usar
+  useEffect(() => {
+    editor.setCanExecute(hasTrigger);
+    
+    // Registrar callback de salvar
+    if (onSave) {
+      editor.setOnSave(() => async () => {
+        await onSave(nodes, edges);
+      });
+    }
+    
+    // Registrar callback de executar
+    if (onExecute) {
+      editor.setOnExecute(() => async () => {
+        if (!hasTrigger) {
+          toast({
+            title: 'Trigger necessário',
+            description: 'Adicione pelo menos um trigger para executar a automação',
+            variant: 'destructive',
+          });
+          return;
+        }
+        onExecute();
+      });
+    }
+    
+    // Registrar callback de exportar
+    if (onExport) {
+      editor.setOnExport(() => onExport);
+    }
+  }, [nodes, edges, hasTrigger, onSave, onExecute, onExport, editor, toast]);
 
   // Calculate position for new node (to the right of the last node)
   const getNewNodePosition = useCallback(() => {
@@ -462,150 +491,29 @@ export function WorkflowEditor({
     setModalOpen(true);
   };
 
-  // ✅ FEATURE 4: Salvar sem fechar com estados visuais
-  const handleSave = async () => {
-    if (onSave) {
-      try {
-        setSaveState('saving');
-        await onSave(nodes, edges);
-        setSaveState('saved');
-        
-        // Voltar para idle após 2 segundos
-        setTimeout(() => setSaveState('idle'), 2000);
-      } catch (error) {
-        setSaveState('idle');
-        throw error;
-      }
-    }
-  };
-  
-  // ✅ FEATURE 5: Exportar automação
-  const handleExport = async () => {
-    if (!automationId) {
-      toast({
-        title: 'Erro',
-        description: 'Salve a automação antes de exportar',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    try {
-      const { exportAutomation } = await import('@/api/automations');
-      const blob = await exportAutomation(automationId);
-      
-      // Download
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `automation-${automationId}-${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      
-      toast({
-        title: 'Exportado com sucesso',
-        description: 'Automação exportada como JSON',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao exportar',
-        description: error.message,
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleExecute = () => {
-    if (!hasTrigger) {
-      toast({
-        title: 'Trigger necessário',
-        description: 'Adicione pelo menos um trigger para executar a automação',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (onExecute) {
-      onExecute();
-    }
-  };
-
   return (
     <div className="relative w-full h-full">
-      {/* Toolbar */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex flex-col sm:flex-row items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-300">
+      {/* ✅ NOVA ARQUITETURA: Apenas botão Add Node (UI elegante) */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10 animate-in fade-in slide-in-from-top-2 duration-300">
         <Button
           onClick={handleOpenModal}
-          className="gap-2 shadow-lg w-full sm:w-auto"
           size="lg"
+          className={cn(
+            "gap-3 px-6 py-6 rounded-xl shadow-2xl",
+            "bg-gradient-to-r from-primary to-primary/80",
+            "hover:shadow-primary/25 hover:scale-105",
+            "transition-all duration-200",
+            "border-2 border-primary-foreground/10"
+          )}
         >
-          <Plus className="w-4 h-4" />
-          {!hasNodes ? 'Adicionar Trigger' : 'Adicionar Tool'}
+          <div className="relative">
+            <Plus className="w-5 h-5" />
+            <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
+          </div>
+          <span className="font-semibold text-base">
+            {!hasNodes ? 'Adicionar Trigger' : 'Adicionar Tool'}
+          </span>
         </Button>
-
-        {hasNodes && (
-          <>
-            {/* ✅ FEATURE 4: Botão Salvar com estados */}
-            <Button
-              onClick={handleSave}
-              disabled={saveState === 'saving'}
-              variant={saveState === 'saved' ? 'default' : 'outline'}
-              className={cn(
-                'gap-2 shadow-lg w-full sm:w-auto transition-all',
-                saveState === 'saved' && 'bg-green-600 hover:bg-green-700 text-white'
-              )}
-              size="lg"
-            >
-              {saveState === 'saving' && <Loader2 className="w-4 h-4 animate-spin" />}
-              {saveState === 'saved' && <Check className="w-4 h-4" />}
-              {saveState === 'idle' && <Save className="w-4 h-4" />}
-              <span className="hidden sm:inline">
-                {saveState === 'saving' && 'Salvando...'}
-                {saveState === 'saved' && 'Salvo!'}
-                {saveState === 'idle' && 'Salvar'}
-              </span>
-              <span className="sm:hidden">
-                {saveState === 'saving' && '⏳'}
-                {saveState === 'saved' && '✓'}
-                {saveState === 'idle' && '💾'}
-              </span>
-            </Button>
-
-            {/* ✅ FEATURE 5: Menu Exportação (3 pontinhos) */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="gap-2 shadow-lg bg-background"
-                >
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem onClick={handleExport} className="gap-2 cursor-pointer">
-                  <Download className="w-4 h-4" />
-                  <span>Exportar</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {hasTrigger && (
-              <Button
-                onClick={handleExecute}
-                variant="default"
-                className="gap-2 shadow-lg w-full sm:w-auto"
-                size="lg"
-              >
-                <Play className="w-4 h-4" />
-                <span className="hidden sm:inline">Executar</span>
-                <span className="sm:hidden">▶</span>
-              </Button>
-            )}
-          </>
-        )}
       </div>
 
       {/* React Flow Canvas */}
