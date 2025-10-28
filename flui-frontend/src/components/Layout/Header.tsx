@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useTheme, themes, type ThemeName } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -17,6 +17,11 @@ interface HeaderProps {
 
 export function Header({ onMenuToggle }: HeaderProps) {
   const { theme: currentTheme, mode, setTheme, setMode } = useTheme();
+  const location = useLocation();
+  
+  // ✅ FEATURE 4: Esconder theme toggle no editor de automação
+  const isAutomationEditor = location.pathname.includes('/automations') && 
+                             window.location.search.includes('editor=true');
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -56,8 +61,10 @@ export function Header({ onMenuToggle }: HeaderProps) {
         </div>
 
         {/* Right side - Theme selector */}
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
+        {/* ✅ FEATURE 4: Não mostrar no editor de automação */}
+        {!isAutomationEditor && (
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="relative">
                 <Palette className="h-5 w-5" />
@@ -120,6 +127,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        )}
       </div>
     </header>
   );

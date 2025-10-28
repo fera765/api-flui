@@ -20,7 +20,13 @@ import { ToolSearchModal, ToolItem } from '@/components/Workflow/ToolSearchModal
 import { NodeConfigModal, NodeConfigData, LinkedField, AvailableOutput } from '@/components/Workflow/NodeConfig/NodeConfigModal';
 import { ConditionConfigModal } from '@/components/Workflow/NodeConfig/ConditionConfigModal';
 import { Button } from '@/components/ui/button';
-import { Plus, X, Save, Play } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Plus, X, Save, Play, Check, Loader2, MoreVertical, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { getToolById } from '@/api/tools';
@@ -109,7 +115,7 @@ interface WorkflowEditorProps {
   automationId?: string;
   initialNodes?: Node<CustomNodeData>[];
   initialEdges?: Edge[];
-  onSave?: (nodes: Node<CustomNodeData>[], edges: Edge[]) => void;
+  onSave?: (nodes: Node<CustomNodeData>[], edges: Edge[]) => Promise<void>; // ✅ async
   onExecute?: () => void;
 }
 
@@ -126,6 +132,7 @@ export function WorkflowEditor({
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [conditionModalOpen, setConditionModalOpen] = useState(false);
   const [currentConfigNode, setCurrentConfigNode] = useState<NodeConfigData | null>(null);
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle'); // ✅ FEATURE 4
   const nodeIdCounter = useRef(1);
   const { toast } = useToast();
 
@@ -421,14 +428,92 @@ export function WorkflowEditor({
     },
     [setEdges, handleDeleteEdge]
   );
+  
+  // ✅ FEATURE 3: Reconectar edges (drag & drop)
+  const onEdgeUpdate = useCallback(
+    (oldEdge: Edge, newConnection: Connection) => {
+      setEdges((eds) => {
+        // Remove old edge
+        const filtered = eds.filter((e) => e.id !== oldEdge.id);
+        
+        // Add new edge
+        const newEdge: Edge = {
+          ...newConnection,
+          id: `edge-${newConnection.source}-${newConnection.target}`,
+          type: 'custom',
+          animated: true,
+          style: { stroke: 'hsl(var(--primary))', strokeWidth: 2 },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: 'hsl(var(--primary))',
+          },
+          data: {
+            onDelete: handleDeleteEdge,
+          },
+        };
+        
+        return addEdge(newEdge, filtered);
+      });
+    },
+    [setEdges, handleDeleteEdge]
+  );
 
   const handleOpenModal = () => {
     setModalOpen(true);
   };
 
-  const handleSave = () => {
+  // ✅ FEATURE 4: Salvar sem fechar com estados visuais
+  const handleSave = async () => {
     if (onSave) {
-      onSave(nodes, edges);
+      try {
+        setSaveState('saving');
+        await onSave(nodes, edges);
+        setSaveState('saved');
+        
+        // Voltar para idle após 2 segundos
+        setTimeout(() => setSaveState('idle'), 2000);
+      } catch (error) {
+        setSaveState('idle');
+        throw error;
+      }
+    }
+  };
+  
+  // ✅ FEATURE 5: Exportar automação
+  const handleExport = async () => {
+    if (!automationId) {
+      toast({
+        title: 'Erro',
+        description: 'Salve a automação antes de exportar',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    try {
+      const { exportAutomation } = await import('@/api/automations');
+      const blob = await exportAutomation(automationId);
+      
+      // Download
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `automation-${automationId}-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: 'Exportado com sucesso',
+        description: 'Automação exportada como JSON',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao exportar',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -462,16 +547,50 @@ export function WorkflowEditor({
 
         {hasNodes && (
           <>
+            {/* ✅ FEATURE 4: Botão Salvar com estados */}
             <Button
               onClick={handleSave}
-              variant="outline"
-              className="gap-2 shadow-lg bg-background w-full sm:w-auto"
+              disabled={saveState === 'saving'}
+              variant={saveState === 'saved' ? 'default' : 'outline'}
+              className={cn(
+                'gap-2 shadow-lg w-full sm:w-auto transition-all',
+                saveState === 'saved' && 'bg-green-600 hover:bg-green-700 text-white'
+              )}
               size="lg"
             >
-              <Save className="w-4 h-4" />
-              <span className="hidden sm:inline">Salvar</span>
-              <span className="sm:hidden">💾</span>
+              {saveState === 'saving' && <Loader2 className="w-4 h-4 animate-spin" />}
+              {saveState === 'saved' && <Check className="w-4 h-4" />}
+              {saveState === 'idle' && <Save className="w-4 h-4" />}
+              <span className="hidden sm:inline">
+                {saveState === 'saving' && 'Salvando...'}
+                {saveState === 'saved' && 'Salvo!'}
+                {saveState === 'idle' && 'Salvar'}
+              </span>
+              <span className="sm:hidden">
+                {saveState === 'saving' && '⏳'}
+                {saveState === 'saved' && '✓'}
+                {saveState === 'idle' && '💾'}
+              </span>
             </Button>
+
+            {/* ✅ FEATURE 5: Menu Exportação (3 pontinhos) */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="gap-2 shadow-lg bg-background"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={handleExport} className="gap-2 cursor-pointer">
+                  <Download className="w-4 h-4" />
+                  <span>Exportar</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {hasTrigger && (
               <Button
@@ -496,6 +615,9 @@ export function WorkflowEditor({
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onEdgeUpdate={onEdgeUpdate} // ✅ FEATURE 3: Reconectar edges
+        edgeReconnectable={true} // ✅ FEATURE 3: Permitir reconexão
+        reconnectRadius={50} // ✅ FEATURE 3: Raio de reconexão
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView

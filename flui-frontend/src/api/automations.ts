@@ -20,6 +20,7 @@ export interface NodeData {
   referenceId: string;
   config?: Record<string, unknown>;
   outputs?: Record<string, unknown>;
+  position?: { x: number; y: number }; // ✅ FEATURE 2: Salvar posição
 }
 
 export interface LinkData {
@@ -108,5 +109,16 @@ export const executeAutomation = async (
   input?: Record<string, unknown>
 ): Promise<ExecuteAutomationResult> => {
   const response = await apiClient.post(`/api/automations/${id}/execute`, input || {});
+  return response.data;
+};
+
+/**
+ * Export automation
+ * ✅ FEATURE 5: Exportação
+ */
+export const exportAutomation = async (id: string): Promise<Blob> => {
+  const response = await apiClient.get(`/api/automations/export/${id}`, {
+    responseType: 'blob',
+  });
   return response.data;
 };

@@ -128,17 +128,20 @@ const Automations = () => {
             }
           }
           
+          // ✅ FEATURE 1 & 2: Usar posição salva + detectar Condition
+          const isConditionNode = toolData?.name === 'Condition' || node.type === NodeType.CONDITION;
+          
           return {
             id: node.id,
-            type: 'custom',
-            position: { x: index * 350 + 100, y: 250 },
+            type: isConditionNode ? 'condition' : 'custom', // ✅ FEATURE 1: tipo correto
+            position: node.position || { x: index * 350 + 100, y: 250 }, // ✅ FEATURE 2: posição salva
             data: {
               label: toolData?.name || `Node ${index + 1}`,
               type: node.type as CustomNodeData['type'],
               description: toolData?.description || '',
               isFirst: index === 0,
               toolId: node.referenceId,
-              config: node.config || {},
+              config: node.config || {}, // ✅ FEATURE 1: config completa preservada
               inputSchema,
               outputSchema,
             },
@@ -235,13 +238,15 @@ const Automations = () => {
       setSaving(true);
 
       // Convert React Flow format to backend format
+      // ✅ FEATURE 2: Salvar posição dos nós
       const backendNodes: NodeData[] = nodes.map((node) => ({
         id: node.id,
         type: node.data.type === 'trigger' ? NodeType.TRIGGER : 
               node.data.type === 'agent' ? NodeType.AGENT :
               node.data.type === 'condition' ? NodeType.CONDITION : NodeType.TOOL,
         referenceId: node.data.toolId || node.id,
-        config: node.data.config || {},
+        config: node.data.config || {}, // ✅ FEATURE 1: config completa salva
+        position: { x: node.position.x, y: node.position.y }, // ✅ FEATURE 2: posição salva!
       }));
 
       // Build links from edges and linkedFields
@@ -293,8 +298,12 @@ const Automations = () => {
         });
       }
 
-      resetForm();
-      setEditorOpen(false);
+      // ✅ FEATURE 4: NÃO fechar editor ao salvar
+      // resetForm();
+      // setEditorOpen(false);
+      
+      // Apenas recarregar automações para atualizar lista
+      await loadAutomations();
     } catch (error: any) {
       console.error('Error saving automation:', error);
       toast({
