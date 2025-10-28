@@ -11,7 +11,6 @@ import { useTheme, themes, type ThemeName } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 import { Link, useLocation } from 'react-router-dom';
 import { useEditor } from '@/contexts/EditorContext';
-import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   onMenuToggle: () => void;

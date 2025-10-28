@@ -71,6 +71,11 @@ const Automations = () => {
   useEffect(() => {
     loadAutomations();
   }, []);
+  
+  // ✅ Sincronizar editorOpen com EditorContext
+  useEffect(() => {
+    editor.setIsEditorOpen(editorOpen);
+  }, [editorOpen, editor]);
 
   const loadAutomations = async () => {
     try {
@@ -169,16 +174,14 @@ const Automations = () => {
       setWorkflowEdges([]);
     }
     
-    setEditorOpen(true);
-    
-    // ✅ NOVA ARQUITETURA: Atualizar context
-    editor.setIsEditorOpen(true);
+    // ✅ NOVA ARQUITETURA: Atualizar context ANTES de abrir
     editor.setAutomationId(automation?.id);
     editor.setAutomationName(automation?.name || name);
     editor.setOnBack(() => () => {
       setEditorOpen(false);
-      editor.setIsEditorOpen(false);
     });
+    
+    setEditorOpen(true);
   };
 
   const resetForm = () => {
@@ -358,6 +361,36 @@ const Automations = () => {
       });
     } finally {
       setExecuting(null);
+    }
+  };
+  
+  // ✅ NOVA ARQUITETURA: Handler de exportação
+  const handleExportAutomation = async () => {
+    if (!editingAutomation) return;
+    
+    try {
+      const { exportAutomation } = await import('@/api/automations');
+      const blob = await exportAutomation(editingAutomation.id);
+      
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `automation-${editingAutomation.id}-${Date.now()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: 'Exportado',
+        description: 'Automação exportada como JSON',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao exportar',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   };
 

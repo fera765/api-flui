@@ -51,7 +51,7 @@ test.describe('Nova Arquitetura - Botões no Header', () => {
     console.log('✅ Botão SALVAR encontrado no Header');
 
     // ✅ VERIFICAR: Menu 3 pontinhos NO HEADER
-    const menuHeader = await page.$('header button svg.lucide-more-vertical');
+    const menuHeader = await page.$('header button svg.lucide-ellipsis-vertical');
     expect(menuHeader).toBeTruthy();
     console.log('✅ Menu 3 PONTINHOS encontrado no Header');
 
@@ -219,7 +219,7 @@ test.describe('Nova Arquitetura - Botões no Header', () => {
     }
 
     // Clicar menu 3 pontinhos
-    const menuBtn = await page.$('header button svg.lucide-more-vertical');
+    const menuBtn = await page.$('header button:has(svg.lucide-ellipsis-vertical)');
     expect(menuBtn).toBeTruthy();
 
     await menuBtn!.click();
