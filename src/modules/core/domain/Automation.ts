@@ -18,6 +18,7 @@ export interface NodeProps {
   referenceId: string;
   config?: Record<string, unknown>;
   outputs?: Record<string, unknown>;
+  position?: { x: number; y: number };
 }
 
 export interface NodeResponse {
@@ -26,6 +27,7 @@ export interface NodeResponse {
   referenceId: string;
   config?: Record<string, unknown>;
   outputs?: Record<string, unknown>;
+  position?: { x: number; y: number };
 }
 
 export class Node {
@@ -34,6 +36,7 @@ export class Node {
   private readonly referenceId: string;
   private config?: Record<string, unknown>;
   private outputs?: Record<string, unknown>;
+  private position?: { x: number; y: number };
 
   constructor(props: NodeProps) {
     this.id = props.id;
@@ -41,6 +44,7 @@ export class Node {
     this.referenceId = props.referenceId;
     this.config = props.config;
     this.outputs = props.outputs;
+    this.position = props.position;
   }
 
   public getId(): string {
@@ -67,6 +71,14 @@ export class Node {
     this.outputs = outputs;
   }
 
+  public getPosition(): { x: number; y: number } | undefined {
+    return this.position;
+  }
+
+  public setPosition(position: { x: number; y: number }): void {
+    this.position = position;
+  }
+
   public updateConfig(config: Record<string, unknown>): void {
     this.config = { ...this.config, ...config };
   }
@@ -78,6 +90,7 @@ export class Node {
       referenceId: this.referenceId,
       config: this.config,
       outputs: this.outputs,
+      position: this.position,
     };
   }
 }

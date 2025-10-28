@@ -179,6 +179,8 @@ const Automations = () => {
     editor.setAutomationName(automation?.name || name);
     editor.setOnBack(() => () => {
       setEditorOpen(false);
+      // ✅ Reload automations after closing editor
+      loadAutomations();
     });
     
     setEditorOpen(true);
@@ -263,29 +265,38 @@ const Automations = () => {
         position: { x: node.position.x, y: node.position.y }, // ✅ FEATURE 2: posição salva!
       }));
 
-      // Build links from edges and linkedFields
+      // Build links from edges and linkedFields (deduplicated)
       const backendLinks: LinkData[] = [];
+      const linkSet = new Set<string>();
       
-      // Add visual connections
+      // Add visual connections (edges)
       edges.forEach((edge) => {
-        backendLinks.push({
-          fromNodeId: edge.source!,
-          fromOutputKey: 'output',
-          toNodeId: edge.target!,
-          toInputKey: 'input',
-        });
+        const linkKey = `${edge.source!}-output-${edge.target!}-input`;
+        if (!linkSet.has(linkKey)) {
+          backendLinks.push({
+            fromNodeId: edge.source!,
+            fromOutputKey: 'output',
+            toNodeId: edge.target!,
+            toInputKey: 'input',
+          });
+          linkSet.add(linkKey);
+        }
       });
 
-      // Add data links (linkedFields)
+      // Add data links (linkedFields) - these override generic links
       nodes.forEach((node) => {
         const linkedFields = (node.data as any).linkedFields || {};
         Object.entries(linkedFields).forEach(([inputKey, link]: [string, any]) => {
-          backendLinks.push({
-            fromNodeId: link.sourceNodeId,
-            fromOutputKey: link.outputKey,
-            toNodeId: node.id,
-            toInputKey: inputKey,
-          });
+          const linkKey = `${link.sourceNodeId}-${link.outputKey}-${node.id}-${inputKey}`;
+          if (!linkSet.has(linkKey)) {
+            backendLinks.push({
+              fromNodeId: link.sourceNodeId,
+              fromOutputKey: link.outputKey,
+              toNodeId: node.id,
+              toInputKey: inputKey,
+            });
+            linkSet.add(linkKey);
+          }
         });
       });
 

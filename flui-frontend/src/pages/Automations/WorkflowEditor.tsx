@@ -414,10 +414,7 @@ export function WorkflowEditor({
         setEdges((eds) => [...eds, newEdge]);
       }
 
-      toast({
-        title: 'Tool adicionada',
-        description: `${tool.name} foi adicionada ao workflow`,
-      });
+      // ✅ Toast removed as per user request
     } catch (error: any) {
       console.error('Error adding tool:', error);
       toast({
