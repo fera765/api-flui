@@ -286,9 +286,12 @@ export function WorkflowEditor({
     }));
   }, [nodes, currentConfigNode, getNodeOutputs]);
 
-  // Inject callbacks into existing nodes only once on mount
+  // ✅ FIX BUG #2: Inject callbacks into existing nodes only ONCE on initial mount
+  // Using a ref to track if we've already injected callbacks
+  const callbacksInjectedRef = useRef(false);
+  
   useEffect(() => {
-    if (initialNodes.length > 0) {
+    if (initialNodes.length > 0 && !callbacksInjectedRef.current) {
       setNodes((nds) =>
         nds.map((node) => ({
           ...node,
@@ -299,9 +302,17 @@ export function WorkflowEditor({
           },
         }))
       );
+      callbacksInjectedRef.current = true;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialNodes.length])
+  
+  // Reset ref when editor closes
+  useEffect(() => {
+    return () => {
+      callbacksInjectedRef.current = false;
+    };
+  }, []);
 
   const handleAddTool = useCallback(async (tool: ToolItem) => {
     try {

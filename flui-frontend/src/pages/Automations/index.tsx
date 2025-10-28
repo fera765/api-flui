@@ -118,6 +118,22 @@ const Automations = () => {
       
       // Convert backend nodes/links to React Flow format
       // Fetch tool data for each node to get proper schemas
+      
+      // ✅ FIX BUG #1: Reconstruir linkedFields a partir dos links do backend
+      const linkedFieldsByNode = new Map<string, Record<string, any>>();
+      automation.links.forEach((link) => {
+        // Se não for um link genérico (output -> input), é um linkedField específico
+        if (link.fromOutputKey !== 'output' || link.toInputKey !== 'input') {
+          if (!linkedFieldsByNode.has(link.toNodeId)) {
+            linkedFieldsByNode.set(link.toNodeId, {});
+          }
+          linkedFieldsByNode.get(link.toNodeId)![link.toInputKey] = {
+            sourceNodeId: link.fromNodeId,
+            outputKey: link.fromOutputKey,
+          };
+        }
+      });
+      
       const flowNodes: Node<CustomNodeData>[] = await Promise.all(
         automation.nodes.map(async (node, index) => {
           let toolData = null;
@@ -149,6 +165,7 @@ const Automations = () => {
               isFirst: index === 0,
               toolId: node.referenceId,
               config: node.config || {},
+              linkedFields: linkedFieldsByNode.get(node.id) || {}, // ✅ FIX: Restaurar linkedFields
               inputSchema,
               outputSchema,
             },
@@ -156,13 +173,15 @@ const Automations = () => {
         })
       );
 
-      const flowEdges: Edge[] = automation.links.map((link) => ({
-        id: `edge-${link.fromNodeId}-${link.toNodeId}`,
-        source: link.fromNodeId,
-        target: link.toNodeId,
-        type: 'custom',
-        animated: true,
-      }));
+      const flowEdges: Edge[] = automation.links
+        .filter((link) => link.fromOutputKey === 'output' && link.toInputKey === 'input') // ✅ Apenas links visuais
+        .map((link) => ({
+          id: `edge-${link.fromNodeId}-${link.toNodeId}`,
+          source: link.fromNodeId,
+          target: link.toNodeId,
+          type: 'custom',
+          animated: true,
+        }));
 
       setWorkflowNodes(flowNodes);
       setWorkflowEdges(flowEdges);
