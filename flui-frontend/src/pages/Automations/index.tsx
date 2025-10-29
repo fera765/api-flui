@@ -9,6 +9,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -16,11 +17,12 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Loader2,
   Plus,
@@ -30,52 +32,85 @@ import {
   Play,
   AlertCircle,
   Workflow as WorkflowIcon,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Pause,
+  Search,
+  Filter,
+  Download,
+  Upload,
+  Settings,
+  Copy,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   getAllAutomations,
   createAutomation,
-  updateAutomation,
   deleteAutomation,
   executeAutomation,
   Automation,
-  NodeData,
-  LinkData,
   AutomationStatus,
-  NodeType,
 } from '@/api/automations';
 import { useToast } from '@/hooks/use-toast';
 import { useEditor } from '@/contexts/EditorContext';
 import { WorkflowEditor } from './WorkflowEditor';
-import { Node, Edge } from 'reactflow';
-import { CustomNodeData } from '@/components/Workflow/CustomNode';
 
 const Automations = () => {
+  // Estado principal
   const [automations, setAutomations] = useState<Automation[]>([]);
+  const [filteredAutomations, setFilteredAutomations] = useState<Automation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [executing, setExecuting] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingAutomation, setEditingAutomation] = useState<Automation | null>(null);
-
+  
+  // Estados do modal de criação
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [workflowNodes, setWorkflowNodes] = useState<Node<CustomNodeData>[]>([]);
-  const [workflowEdges, setWorkflowEdges] = useState<Edge[]>([]);
+  const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<{ name?: string }>({});
+  
+  // Estados do editor
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [currentAutomation, setCurrentAutomation] = useState<Automation | null>(null);
+  
+  // Estados de filtro e busca
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<AutomationStatus | 'all'>('all');
 
   const { toast } = useToast();
   const editor = useEditor();
 
+  // Carregar automações
   useEffect(() => {
     loadAutomations();
   }, []);
-  
-  // ✅ Sincronizar editorOpen com EditorContext
+
+  // Sincronizar estado do editor
   useEffect(() => {
     editor.setIsEditorOpen(editorOpen);
   }, [editorOpen, editor]);
+
+  // Filtrar automações
+  useEffect(() => {
+    let filtered = automations;
+
+    // Filtro por busca
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(
+        (auto) =>
+          auto.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          auto.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Filtro por status
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((auto) => auto.status === statusFilter);
+    }
+
+    setFilteredAutomations(filtered);
+  }, [automations, searchQuery, statusFilter]);
 
   const loadAutomations = async () => {
     try {
@@ -83,7 +118,7 @@ const Automations = () => {
       const data = await getAllAutomations();
       setAutomations(data);
     } catch (error: any) {
-      console.error('Error loading automations:', error);
+      console.error('Erro ao carregar automações:', error);
       toast({
         title: 'Erro ao carregar automações',
         description: error.response?.data?.error || error.message,
@@ -95,101 +130,10 @@ const Automations = () => {
   };
 
   const openCreateDialog = () => {
-    setEditingAutomation(null);
-    resetForm();
-    setDialogOpen(true);
-  };
-
-  const openEditDialog = (automation: Automation) => {
-    setEditingAutomation(automation);
-    setName(automation.name);
-    setDescription(automation.description || '');
-    setDialogOpen(true);
-  };
-
-  const openWorkflowEditor = async (automation?: Automation) => {
-    if (automation) {
-      setEditingAutomation(automation);
-      setName(automation.name);
-      setDescription(automation.description || '');
-      
-      // Import getToolById
-      const { getToolById } = await import('@/api/tools');
-      
-      // Convert backend nodes/links to React Flow format
-      // Fetch tool data for each node to get proper schemas
-      const flowNodes: Node<CustomNodeData>[] = await Promise.all(
-        automation.nodes.map(async (node, index) => {
-          let toolData = null;
-          let inputSchema = { type: 'object', properties: {} };
-          let outputSchema = { type: 'object', properties: {} };
-          
-          // Try to fetch tool data if we have a referenceId
-          if (node.referenceId) {
-            try {
-              toolData = await getToolById(node.referenceId);
-              inputSchema = toolData.inputSchema || inputSchema;
-              outputSchema = toolData.outputSchema || outputSchema;
-            } catch (error) {
-              console.warn(`Failed to load tool data for ${node.referenceId}:`, error);
-            }
-          }
-          
-          // ✅ Detectar Condition + usar posição salva
-          const isConditionNode = toolData?.name === 'Condition' || node.type === NodeType.CONDITION;
-          
-          return {
-            id: node.id,
-            type: isConditionNode ? 'condition' : 'custom',
-            position: node.position || { x: index * 350 + 100, y: 250 },
-            data: {
-              label: toolData?.name || `Node ${index + 1}`,
-              type: node.type as CustomNodeData['type'],
-              description: toolData?.description || '',
-              isFirst: index === 0,
-              toolId: node.referenceId,
-              config: node.config || {},
-              inputSchema,
-              outputSchema,
-            },
-          };
-        })
-      );
-
-      const flowEdges: Edge[] = automation.links.map((link) => ({
-        id: `edge-${link.fromNodeId}-${link.toNodeId}`,
-        source: link.fromNodeId,
-        target: link.toNodeId,
-        type: 'custom',
-        animated: true,
-      }));
-
-      setWorkflowNodes(flowNodes);
-      setWorkflowEdges(flowEdges);
-    } else {
-      setEditingAutomation(null);
-      setName('');
-      setDescription('');
-      setWorkflowNodes([]);
-      setWorkflowEdges([]);
-    }
-    
-    // ✅ NOVA ARQUITETURA: Atualizar context ANTES de abrir
-    editor.setAutomationId(automation?.id);
-    editor.setAutomationName(automation?.name || name);
-    editor.setOnBack(() => () => {
-      setEditorOpen(false);
-    });
-    
-    setEditorOpen(true);
-  };
-
-  const resetForm = () => {
     setName('');
     setDescription('');
-    setWorkflowNodes([]);
-    setWorkflowEdges([]);
     setErrors({});
+    setCreateDialogOpen(true);
   };
 
   const validateForm = (): boolean => {
@@ -197,44 +141,40 @@ const Automations = () => {
 
     if (!name || name.trim().length === 0) {
       newErrors.name = 'Nome é obrigatório';
+    } else if (name.trim().length < 3) {
+      newErrors.name = 'Nome deve ter pelo menos 3 caracteres';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleBasicInfoSave = async () => {
+  const handleCreate = async () => {
     if (!validateForm()) return;
 
     try {
       setSaving(true);
 
-      // If creating a new automation, save it to backend first to get an ID
-      if (!editingAutomation) {
-        const newAutomation = await createAutomation({
-          name,
-          description,
-          nodes: [],
-          links: [],
-          status: AutomationStatus.INACTIVE,
-        });
+      const newAutomation = await createAutomation({
+        name: name.trim(),
+        description: description.trim() || undefined,
+        nodes: [],
+        links: [],
+        status: AutomationStatus.IDLE,
+      });
 
-        setEditingAutomation(newAutomation);
-        toast({
-          title: 'Automação criada',
-          description: 'Agora você pode adicionar tools ao workflow',
-        });
-        
-        // Open workflow editor with the new automation ID
-        setDialogOpen(false);
-        openWorkflowEditor(newAutomation);
-      } else {
-        // If editing, just open the workflow editor
-        setDialogOpen(false);
-        openWorkflowEditor(editingAutomation);
-      }
+      setAutomations([...automations, newAutomation]);
+      setCreateDialogOpen(false);
+
+      toast({
+        title: '✅ Automação criada',
+        description: 'Agora você pode construir o workflow',
+      });
+
+      // Abrir editor
+      openEditor(newAutomation);
     } catch (error: any) {
-      console.error('Error creating automation:', error);
+      console.error('Erro ao criar automação:', error);
       toast({
         title: 'Erro ao criar automação',
         description: error.response?.data?.error || error.message,
@@ -245,97 +185,37 @@ const Automations = () => {
     }
   };
 
-  const handleWorkflowSave = async (nodes: Node<CustomNodeData>[], edges: Edge[]) => {
-    if (!validateForm()) return;
-
-    try {
-      setSaving(true);
-
-      // Convert React Flow format to backend format
-      // ✅ FEATURE 2: Salvar posição dos nós
-      const backendNodes: NodeData[] = nodes.map((node) => ({
-        id: node.id,
-        type: node.data.type === 'trigger' ? NodeType.TRIGGER : 
-              node.data.type === 'agent' ? NodeType.AGENT :
-              node.data.type === 'condition' ? NodeType.CONDITION : NodeType.TOOL,
-        referenceId: node.data.toolId || node.id,
-        config: node.data.config || {}, // ✅ FEATURE 1: config completa salva
-        position: { x: node.position.x, y: node.position.y }, // ✅ FEATURE 2: posição salva!
-      }));
-
-      // Build links from edges and linkedFields
-      const backendLinks: LinkData[] = [];
-      
-      // Add visual connections
-      edges.forEach((edge) => {
-        backendLinks.push({
-          fromNodeId: edge.source!,
-          fromOutputKey: 'output',
-          toNodeId: edge.target!,
-          toInputKey: 'input',
-        });
-      });
-
-      // Add data links (linkedFields)
-      nodes.forEach((node) => {
-        const linkedFields = (node.data as any).linkedFields || {};
-        Object.entries(linkedFields).forEach(([inputKey, link]: [string, any]) => {
-          backendLinks.push({
-            fromNodeId: link.sourceNodeId,
-            fromOutputKey: link.outputKey,
-            toNodeId: node.id,
-            toInputKey: inputKey,
-          });
-        });
-      });
-
-      const payload = {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        nodes: backendNodes,
-        links: backendLinks,
-      };
-
-      if (editingAutomation) {
-        const updated = await updateAutomation(editingAutomation.id, payload);
-        // ✅ REPLACE: Atualizar apenas o estado local, sem reload
-        setEditingAutomation(updated);
-        setAutomations(automations.map((a) => (a.id === updated.id ? updated : a)));
-        // ✅ REPLACE: SEM TOAST - feedback visual no botão
-      } else {
-        const created = await createAutomation(payload);
-        // ✅ REPLACE: Atualizar estado local
-        setEditingAutomation(created);
-        setAutomations([...automations, created]);
-        // ✅ REPLACE: SEM TOAST - feedback visual no botão
-      }
-
-      // ✅ REPLACE: NÃO recarregar automações, NÃO limpar workflow
-      // Workflow permanece intacto após salvar!
-    } catch (error: any) {
-      console.error('Error saving automation:', error);
-      toast({
-        title: editingAutomation ? 'Erro ao atualizar automação' : 'Erro ao criar automação',
-        description: error.response?.data?.error || error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
+  const openEditor = (automation: Automation) => {
+    setCurrentAutomation(automation);
+    
+    // Configurar contexto do editor
+    editor.setAutomationId(automation.id);
+    editor.setAutomationName(automation.name);
+    editor.setOnBack(() => () => {
+      setEditorOpen(false);
+      loadAutomations(); // Recarregar para pegar mudanças
+    });
+    
+    setEditorOpen(true);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir a automação "${name}"?`)) return;
+  const handleDelete = async (automation: Automation) => {
+    const confirmed = confirm(
+      `Tem certeza que deseja excluir a automação "${automation.name}"?\n\nEsta ação não pode ser desfeita.`
+    );
+    
+    if (!confirmed) return;
 
     try {
-      await deleteAutomation(id);
-      setAutomations(automations.filter((a) => a.id !== id));
+      await deleteAutomation(automation.id);
+      setAutomations(automations.filter((a) => a.id !== automation.id));
+      
       toast({
-        title: 'Automação excluída',
-        description: `A automação "${name}" foi excluída com sucesso`,
+        title: '🗑️ Automação excluída',
+        description: `"${automation.name}" foi excluída com sucesso`,
       });
     } catch (error: any) {
-      console.error('Error deleting automation:', error);
+      console.error('Erro ao excluir automação:', error);
       toast({
         title: 'Erro ao excluir automação',
         description: error.response?.data?.error || error.message,
@@ -344,16 +224,29 @@ const Automations = () => {
     }
   };
 
-  const handleExecute = async (id: string, name: string) => {
-    try {
-      setExecuting(id);
-      await executeAutomation(id);
+  const handleExecute = async (automation: Automation) => {
+    if (automation.nodes.length === 0) {
       toast({
-        title: 'Automação executada',
-        description: `A automação "${name}" foi executada com sucesso`,
+        title: 'Automação vazia',
+        description: 'Adicione pelo menos um nó antes de executar',
+        variant: 'destructive',
       });
+      return;
+    }
+
+    try {
+      setExecuting(automation.id);
+      await executeAutomation(automation.id);
+      
+      toast({
+        title: '▶️ Automação executada',
+        description: `"${automation.name}" foi executada com sucesso`,
+      });
+      
+      // Recarregar para atualizar status
+      await loadAutomations();
     } catch (error: any) {
-      console.error('Error executing automation:', error);
+      console.error('Erro ao executar automação:', error);
       toast({
         title: 'Erro ao executar automação',
         description: error.response?.data?.error || error.message,
@@ -363,49 +256,68 @@ const Automations = () => {
       setExecuting(null);
     }
   };
-  
-  // ✅ NOVA ARQUITETURA: Handler de exportação
-  const handleExportAutomation = async () => {
-    if (!editingAutomation) return;
-    
+
+  const handleDuplicate = async (automation: Automation) => {
     try {
-      const { exportAutomation } = await import('@/api/automations');
-      const blob = await exportAutomation(editingAutomation.id);
-      
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `automation-${editingAutomation.id}-${Date.now()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      const duplicated = await createAutomation({
+        name: `${automation.name} (cópia)`,
+        description: automation.description,
+        nodes: automation.nodes,
+        links: automation.links,
+        status: AutomationStatus.IDLE,
+      });
+
+      setAutomations([...automations, duplicated]);
       
       toast({
-        title: 'Exportado',
-        description: 'Automação exportada como JSON',
+        title: '📋 Automação duplicada',
+        description: `"${duplicated.name}" foi criada com sucesso`,
       });
     } catch (error: any) {
+      console.error('Erro ao duplicar automação:', error);
       toast({
-        title: 'Erro ao exportar',
-        description: error.message,
+        title: 'Erro ao duplicar automação',
+        description: error.response?.data?.error || error.message,
         variant: 'destructive',
       });
     }
   };
 
-  const getStatusBadge = (status: AutomationStatus) => {
-    const variants = {
-      idle: { label: 'Idle', class: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300' },
-      running: { label: 'Executando', class: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' },
-      completed: { label: 'Concluída', class: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' },
-      error: { label: 'Erro', class: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300' },
+  const getStatusConfig = (status: AutomationStatus) => {
+    const configs = {
+      idle: {
+        label: 'Inativa',
+        icon: Pause,
+        className: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+      },
+      running: {
+        label: 'Executando',
+        icon: Clock,
+        className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+      },
+      completed: {
+        label: 'Concluída',
+        icon: CheckCircle2,
+        className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+      },
+      error: {
+        label: 'Erro',
+        icon: XCircle,
+        className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+      },
     };
 
-    const variant = variants[status];
+    return configs[status];
+  };
+
+  const getStatusBadge = (status: AutomationStatus) => {
+    const config = getStatusConfig(status);
+    const Icon = config.icon;
+
     return (
-      <Badge className={cn('text-xs', variant.class)}>
-        {variant.label}
+      <Badge className={cn('gap-1.5 text-xs font-medium', config.className)}>
+        <Icon className="w-3 h-3" />
+        {config.label}
       </Badge>
     );
   };
@@ -415,235 +327,385 @@ const Automations = () => {
       <MainLayout>
         <div className="flex items-center justify-center min-h-[calc(100vh-8rem)]">
           <div className="text-center space-y-4">
-            <Loader2 className="w-8 h-8 animate-spin mx-auto text-primary" />
-            <p className="text-muted-foreground">Carregando automações...</p>
+            <Loader2 className="w-12 h-12 animate-spin mx-auto text-primary" />
+            <p className="text-lg text-muted-foreground">Carregando automações...</p>
           </div>
         </div>
       </MainLayout>
     );
   }
 
-  // ✅ NOVA ARQUITETURA: Editor Mode (botões no Header)
-  if (editorOpen) {
+  // Modo Editor
+  if (editorOpen && currentAutomation) {
     return (
       <MainLayout>
         <div className="h-[calc(100vh-4rem)]">
           <ErrorBoundary>
-            <WorkflowEditor
-              automationId={editingAutomation?.id}
-              initialNodes={workflowNodes}
-              initialEdges={workflowEdges}
-              onSave={handleWorkflowSave}
-              onExecute={() => editingAutomation && handleExecute(editingAutomation.id, editingAutomation.name)}
-              onExport={handleExportAutomation}
-            />
+            <WorkflowEditor automation={currentAutomation} />
           </ErrorBoundary>
         </div>
       </MainLayout>
     );
   }
 
-  // List Mode
+  // Modo Lista
   return (
     <MainLayout>
-      <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-primary/10 rounded-lg">
-              <WorkflowIcon className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">Automações</h1>
-              <p className="text-sm text-muted-foreground">
-                Crie e gerencie seus workflows automatizados
-              </p>
+      <div className="container mx-auto max-w-7xl py-8 px-4 space-y-8 animate-fade-in">
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl">
+                <WorkflowIcon className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Automações</h1>
+                <p className="text-muted-foreground mt-1">
+                  Crie e gerencie workflows automatizados
+                </p>
+              </div>
             </div>
           </div>
 
-          <Button size="lg" className="gap-2" onClick={openCreateDialog}>
-            <Plus className="w-4 h-4" />
-            Criar Automação
+          <Button size="lg" onClick={openCreateDialog} className="gap-2 shadow-lg">
+            <Plus className="w-5 h-5" />
+            Nova Automação
           </Button>
         </div>
 
         {/* Info Alert */}
-        <Alert className="border-primary/20 bg-primary/5">
-          <Zap className="h-4 w-4 text-primary" />
-          <AlertDescription>
-            Automações permitem criar workflows visuais conectando triggers, actions, agents e conditions
+        <Alert className="border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10">
+          <Zap className="h-5 w-5 text-primary" />
+          <AlertTitle className="font-semibold">Automações Inteligentes</AlertTitle>
+          <AlertDescription className="text-sm">
+            Conecte triggers, actions, agents e conditions para criar workflows poderosos e automatizar processos complexos
           </AlertDescription>
         </Alert>
 
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar automações..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          
+          <div className="flex gap-2">
+            <Button
+              variant={statusFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter('all')}
+            >
+              Todas
+            </Button>
+            <Button
+              variant={statusFilter === AutomationStatus.IDLE ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter(AutomationStatus.IDLE)}
+            >
+              Inativas
+            </Button>
+            <Button
+              variant={statusFilter === AutomationStatus.RUNNING ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setStatusFilter(AutomationStatus.RUNNING)}
+            >
+              Ativas
+            </Button>
+          </div>
+        </div>
+
         {/* Automations Grid */}
-        {automations.length === 0 ? (
-          <Card className="border-2 border-dashed">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="p-4 bg-primary/10 rounded-full mb-4">
-                <WorkflowIcon className="w-8 h-8 text-primary" />
+        {filteredAutomations.length === 0 ? (
+          <Card className="border-2 border-dashed bg-gradient-to-br from-background to-muted/20">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="p-6 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl mb-6 shadow-lg">
+                <WorkflowIcon className="w-12 h-12 text-primary" />
               </div>
-              <h3 className="text-lg font-semibold mb-2">Nenhuma automação criada</h3>
-              <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-                Crie sua primeira automação para começar a automatizar seus processos
+              <h3 className="text-2xl font-bold mb-3">
+                {searchQuery || statusFilter !== 'all'
+                  ? 'Nenhuma automação encontrada'
+                  : 'Comece sua jornada de automação'}
+              </h3>
+              <p className="text-muted-foreground mb-6 max-w-md">
+                {searchQuery || statusFilter !== 'all'
+                  ? 'Tente ajustar os filtros ou termos de busca'
+                  : 'Crie sua primeira automação e comece a transformar processos manuais em workflows automáticos'}
               </p>
-              <Button onClick={openCreateDialog} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Criar Primeira Automação
-              </Button>
+              {!searchQuery && statusFilter === 'all' && (
+                <Button onClick={openCreateDialog} size="lg" className="gap-2">
+                  <Plus className="w-5 h-5" />
+                  Criar Primeira Automação
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {automations.map((automation) => (
-              <Card
-                key={automation.id}
-                className="border-2 shadow-md hover:shadow-lg transition-all hover:scale-[1.02]"
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg truncate flex items-center gap-2">
-                        <WorkflowIcon className="w-5 h-5 text-primary flex-shrink-0" />
-                        {automation.name}
-                      </CardTitle>
-                      {automation.description && (
-                        <CardDescription className="text-sm line-clamp-2 mt-1">
-                          {automation.description}
-                        </CardDescription>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {/* Stats */}
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium">{automation.nodes.length}</span>
-                      <span>nós</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="font-medium">{automation.links.length}</span>
-                      <span>conexões</span>
-                    </div>
-                  </div>
+          <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredAutomations.map((automation) => (
+                <Card
+                  key={automation.id}
+                  className={cn(
+                    'group relative overflow-hidden',
+                    'border-2 shadow-md hover:shadow-2xl',
+                    'transition-all duration-300 hover:scale-[1.02]',
+                    'bg-gradient-to-br from-background to-muted/20'
+                  )}
+                >
+                  {/* Status Indicator Bar */}
+                  <div
+                    className={cn(
+                      'absolute top-0 left-0 right-0 h-1',
+                      automation.status === AutomationStatus.RUNNING && 'bg-blue-500',
+                      automation.status === AutomationStatus.COMPLETED && 'bg-green-500',
+                      automation.status === AutomationStatus.ERROR && 'bg-red-500',
+                      automation.status === AutomationStatus.IDLE && 'bg-gray-400'
+                    )}
+                  />
 
-                  {/* Status */}
-                  {getStatusBadge(automation.status)}
+                  <CardHeader className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg font-bold flex items-center gap-2 group-hover:text-primary transition-colors">
+                          <WorkflowIcon className="w-5 h-5 flex-shrink-0" />
+                          <span className="truncate">{automation.name}</span>
+                        </CardTitle>
+                      </div>
+                      {getStatusBadge(automation.status)}
+                    </div>
+                    
+                    {automation.description && (
+                      <CardDescription className="text-sm line-clamp-2 min-h-[2.5rem]">
+                        {automation.description}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
 
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 gap-2"
-                      onClick={() => openWorkflowEditor(automation)}
-                    >
-                      <Edit className="w-4 h-4" />
-                      Editar
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => handleExecute(automation.id, automation.name)}
-                      disabled={executing === automation.id}
-                    >
-                      {executing === automation.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Play className="w-4 h-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2 text-destructive hover:text-destructive"
-                      onClick={() => handleDelete(automation.id, automation.name)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <CardContent className="space-y-4">
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                        <div className="p-1.5 rounded-md bg-primary/10">
+                          <Settings className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Nós</p>
+                          <p className="text-sm font-bold">{automation.nodes.length}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
+                        <div className="p-1.5 rounded-md bg-primary/10">
+                          <Zap className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Conexões</p>
+                          <p className="text-sm font-bold">{automation.links.length}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 group/edit"
+                        onClick={() => openEditor(automation)}
+                      >
+                        <Edit className="w-4 h-4 group-hover/edit:text-primary transition-colors" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 group/play"
+                        onClick={() => handleExecute(automation)}
+                        disabled={executing === automation.id}
+                      >
+                        {executing === automation.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Play className="w-4 h-4 group-hover/play:text-green-600 transition-colors" />
+                        )}
+                        Executar
+                      </Button>
+                    </div>
+
+                    {/* Secondary Actions */}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 gap-2"
+                        onClick={() => handleDuplicate(automation)}
+                      >
+                        <Copy className="w-4 h-4" />
+                        Duplicar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(automation)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Results Count */}
+            <div className="text-center text-sm text-muted-foreground">
+              Mostrando {filteredAutomations.length} de {automations.length} automações
+            </div>
+          </>
         )}
 
-        {/* Info Card */}
-        <Card className="border-primary/20 bg-primary/5">
+        {/* Help Card */}
+        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-background">
           <CardHeader>
-            <CardTitle className="text-base">💡 Sobre Automações</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Zap className="w-5 h-5 text-primary" />
+              Como funcionam as Automações?
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>• Toda automação começa com um <strong>Trigger</strong></p>
-            <p>• Conecte <strong>Actions</strong>, <strong>Agents</strong> e <strong>MCPs</strong> para criar o fluxo</p>
-            <p>• Use <strong>Conditions</strong> para criar ramificações condicionais</p>
-            <p>• Clique nas conexões para desconectar e reorganizar o fluxo</p>
+          <CardContent className="space-y-3 text-sm text-muted-foreground">
+            <div className="flex items-start gap-3">
+              <div className="p-1.5 bg-primary/10 rounded-lg">
+                <span className="text-primary font-bold">1</span>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Comece com um Trigger</p>
+                <p>Todo workflow precisa de um ponto de partida (webhook, schedule, etc)</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="p-1.5 bg-primary/10 rounded-lg">
+                <span className="text-primary font-bold">2</span>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Adicione Actions e Agents</p>
+                <p>Conecte ferramentas e agentes IA para processar dados</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="p-1.5 bg-primary/10 rounded-lg">
+                <span className="text-primary font-bold">3</span>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Use Conditions</p>
+                <p>Crie ramificações e fluxos condicionais baseados em dados</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <div className="p-1.5 bg-primary/10 rounded-lg">
+                <span className="text-primary font-bold">4</span>
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Execute e Monitore</p>
+                <p>Execute manualmente ou via triggers automáticos</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Basic Info Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+        {/* Create Dialog */}
+        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+          <DialogContent className="sm:max-w-[550px]">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <WorkflowIcon className="w-5 h-5 text-primary" />
-                {editingAutomation ? 'Editar Automação' : 'Nova Automação'}
+              <DialogTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <WorkflowIcon className="w-5 h-5 text-primary" />
+                </div>
+                Nova Automação
               </DialogTitle>
               <DialogDescription>
-                Defina as informações básicas da automação
+                Defina as informações básicas da sua automação. Você poderá construir o workflow na próxima etapa.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-4">
-              {/* Name */}
+            <div className="space-y-6 py-4">
+              {/* Name Field */}
               <div className="space-y-2">
-                <Label htmlFor="name" className="flex items-center gap-2">
-                  Nome
-                  <Badge variant="destructive" className="text-xs">Obrigatório</Badge>
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Nome da Automação
+                  <Badge variant="destructive" className="ml-2 text-xs">
+                    Obrigatório
+                  </Badge>
                 </Label>
                 <Input
                   id="name"
-                  placeholder="Ex: Processar Pedidos"
+                  placeholder="Ex: Processar Novos Pedidos"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className={cn(errors.name && 'border-red-500')}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (errors.name) setErrors({ ...errors, name: undefined });
+                  }}
+                  className={cn(errors.name && 'border-red-500 focus-visible:ring-red-500')}
+                  maxLength={100}
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-500 flex items-center gap-1">
+                  <p className="text-sm text-red-500 flex items-center gap-1.5">
                     <AlertCircle className="w-4 h-4" />
                     {errors.name}
                   </p>
                 )}
               </div>
 
-              {/* Description */}
+              {/* Description Field */}
               <div className="space-y-2">
-                <Label htmlFor="description" className="flex items-center gap-2">
+                <Label htmlFor="description" className="text-sm font-medium">
                   Descrição
-                  <Badge variant="secondary" className="text-xs">Opcional</Badge>
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    Opcional
+                  </Badge>
                 </Label>
                 <Textarea
                   id="description"
-                  placeholder="Descreva o objetivo desta automação"
+                  placeholder="Descreva o objetivo e funcionamento desta automação..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  rows={3}
+                  rows={4}
+                  maxLength={500}
+                  className="resize-none"
                 />
+                <p className="text-xs text-muted-foreground text-right">
+                  {description.length}/500 caracteres
+                </p>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2">
+            <DialogFooter className="gap-2">
               <Button
+                type="button"
                 variant="outline"
-                onClick={() => setDialogOpen(false)}
+                onClick={() => setCreateDialogOpen(false)}
+                disabled={saving}
               >
                 Cancelar
               </Button>
-              <Button onClick={handleBasicInfoSave}>
-                Próximo: Criar Workflow
+              <Button onClick={handleCreate} disabled={saving} className="gap-2">
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  <>
+                    <WorkflowIcon className="w-4 h-4" />
+                    Criar e Editar Workflow
+                  </>
+                )}
               </Button>
-            </div>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
