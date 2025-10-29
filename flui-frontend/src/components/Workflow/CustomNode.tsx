@@ -1,187 +1,185 @@
 import { memo } from 'react';
 import { Handle, Position, NodeProps } from 'reactflow';
-import { cn } from '@/lib/utils';
-import { Bot, Zap, Wrench, GitBranch, Package, Settings, Trash2 } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { 
+  Settings, 
+  Trash2, 
+  Zap, 
+  PlayCircle, 
+  Bot, 
+  Wrench,
+  Sparkles,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface CustomNodeData {
   label: string;
-  type: 'trigger' | 'action' | 'condition' | 'agent' | 'mcp';
-  subtype?: string;
+  type: 'trigger' | 'tool' | 'agent' | 'condition';
   description?: string;
-  icon?: string;
-  isFirst?: boolean;
-  toolId?: string;
-  config?: Record<string, any>;
-  inputSchema?: Record<string, any>;
-  outputSchema?: Record<string, any>;
+  toolId: string;
+  config: Record<string, any>;
+  inputSchema: any;
+  outputSchema: any;
+  linkedFields?: Record<string, any>;
   onConfigure?: (nodeId: string) => void;
   onDelete?: (nodeId: string) => void;
 }
 
-const getNodeConfig = (type: CustomNodeData['type']) => {
-  switch (type) {
-    case 'trigger':
-      return {
-        icon: Zap,
-        bgGradient: 'from-orange-500/20 to-orange-600/20',
-        borderColor: 'border-orange-500/50',
-        iconColor: 'text-orange-600 dark:text-orange-400',
-        badgeColor: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
-      };
-    case 'action':
-      return {
-        icon: Wrench,
-        bgGradient: 'from-blue-500/20 to-blue-600/20',
-        borderColor: 'border-blue-500/50',
-        iconColor: 'text-blue-600 dark:text-blue-400',
-        badgeColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-      };
-    case 'condition':
-      return {
-        icon: GitBranch,
-        bgGradient: 'from-purple-500/20 to-purple-600/20',
-        borderColor: 'border-purple-500/50',
-        iconColor: 'text-purple-600 dark:text-purple-400',
-        badgeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-      };
-    case 'agent':
-      return {
-        icon: Bot,
-        bgGradient: 'from-green-500/20 to-green-600/20',
-        borderColor: 'border-green-500/50',
-        iconColor: 'text-green-600 dark:text-green-400',
-        badgeColor: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-      };
-    case 'mcp':
-      return {
-        icon: Package,
-        bgGradient: 'from-pink-500/20 to-pink-600/20',
-        borderColor: 'border-pink-500/50',
-        iconColor: 'text-pink-600 dark:text-pink-400',
-        badgeColor: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
-      };
-    default:
-      // Fallback para tipos desconhecidos
-      return {
-        icon: Wrench,
-        bgGradient: 'from-gray-500/20 to-gray-600/20',
-        borderColor: 'border-gray-500/50',
-        iconColor: 'text-gray-600 dark:text-gray-400',
-        badgeColor: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300',
-      };
-  }
+const typeConfig = {
+  trigger: {
+    icon: PlayCircle,
+    color: 'from-blue-500/20 to-blue-600/20',
+    borderColor: 'border-blue-500/50',
+    badgeClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    label: 'Trigger',
+  },
+  tool: {
+    icon: Wrench,
+    color: 'from-purple-500/20 to-purple-600/20',
+    borderColor: 'border-purple-500/50',
+    badgeClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+    label: 'Tool',
+  },
+  agent: {
+    icon: Bot,
+    color: 'from-green-500/20 to-green-600/20',
+    borderColor: 'border-green-500/50',
+    badgeClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    label: 'Agent',
+  },
+  condition: {
+    icon: Sparkles,
+    color: 'from-orange-500/20 to-orange-600/20',
+    borderColor: 'border-orange-500/50',
+    badgeClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+    label: 'Condition',
+  },
 };
 
-export const CustomNode = memo(({ data, selected, id }: NodeProps<CustomNodeData>) => {
-  const config = getNodeConfig(data.type);
+export const CustomNode = memo(({ id, data, selected }: NodeProps<CustomNodeData>) => {
+  const config = typeConfig[data.type];
   const Icon = config.icon;
 
-  const handleConfigure = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (data.onConfigure) {
-      data.onConfigure(id);
-    }
-  };
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (data.onDelete) {
-      data.onDelete(id);
-    }
-  };
+  const hasConfig = data.config && Object.keys(data.config).length > 0;
+  const hasLinkedFields = data.linkedFields && Object.keys(data.linkedFields).length > 0;
 
   return (
-    <div
-      className={cn(
-        'relative bg-background rounded-lg border-2 transition-all duration-200',
-        'shadow-md hover:shadow-lg',
-        'min-w-[200px] max-w-[280px]',
-        config.borderColor,
-        selected && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
-        'animate-in fade-in zoom-in-95 duration-200'
-      )}
-    >
-      {/* Background Gradient */}
-      <div className={cn(
-        'absolute inset-0 rounded-lg bg-gradient-to-br opacity-0 hover:opacity-100 transition-opacity',
-        config.bgGradient
-      )} />
-
-      {/* Content */}
-      <div className="relative p-3 space-y-2">
-        {/* Header */}
-        <div className="flex items-center gap-2">
-          <div className={cn('p-1.5 rounded-md bg-background/80', config.iconColor)}>
-            <Icon className="w-4 h-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-sm truncate">{data.label}</h3>
-          </div>
-          <Badge className={cn('text-[10px] px-1.5 py-0', config.badgeColor)}>
-            {data.type}
-          </Badge>
-        </div>
-
-        {/* Description */}
-        {data.description && (
-          <p className="text-xs text-muted-foreground line-clamp-2">
-            {data.description}
-          </p>
+    <div className="relative group">
+      {/* Connection Handles */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        className={cn(
+          'w-3 h-3',
+          '!bg-primary !border-2 !border-background',
+          'transition-all',
+          'group-hover:w-4 group-hover:h-4'
         )}
-
-        {/* Subtype */}
-        {data.subtype && (
-          <p className="text-[10px] text-muted-foreground font-mono">
-            {data.subtype}
-          </p>
-        )}
-
-        {/* Action Buttons */}
-        <div className="flex gap-1 pt-1">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 px-2 text-xs hover:bg-primary/10"
-            onClick={handleConfigure}
-          >
-            <Settings className="w-3 h-3 mr-1" />
-            Config
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="h-6 px-2 text-xs hover:bg-destructive/10 hover:text-destructive"
-            onClick={handleDelete}
-          >
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Handles */}
-      {!data.isFirst && (
-        <Handle
-          type="target"
-          position={Position.Left}
-          className={cn(
-            'w-3 h-3 !bg-background !border-2',
-            config.borderColor,
-            'transition-all hover:scale-125'
-          )}
-        />
-      )}
-      
+      />
       <Handle
         type="source"
         position={Position.Right}
         className={cn(
-          'w-3 h-3 !bg-background !border-2',
-          config.borderColor,
-          'transition-all hover:scale-125'
+          'w-3 h-3',
+          '!bg-primary !border-2 !border-background',
+          'transition-all',
+          'group-hover:w-4 group-hover:h-4'
         )}
       />
+
+      {/* Node Card */}
+      <Card
+        className={cn(
+          'min-w-[300px] max-w-[350px]',
+          'transition-all duration-300',
+          'hover:shadow-2xl',
+          config.borderColor,
+          selected && 'ring-4 ring-primary/50 shadow-2xl scale-105'
+        )}
+      >
+        {/* Header com gradiente */}
+        <div className={cn('bg-gradient-to-r', config.color, 'border-b')}>
+          <CardHeader className="p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="p-2 rounded-lg bg-background/80 backdrop-blur">
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-base font-bold truncate">{data.label}</CardTitle>
+                  {data.description && (
+                    <CardDescription className="text-xs line-clamp-1">
+                      {data.description}
+                    </CardDescription>
+                  )}
+                </div>
+              </div>
+              <Badge className={cn('text-xs whitespace-nowrap', config.badgeClass)}>
+                {config.label}
+              </Badge>
+            </div>
+          </CardHeader>
+        </div>
+
+        {/* Content */}
+        <CardContent className="p-4 space-y-3">
+          {/* Status Indicators */}
+          <div className="flex gap-2 text-xs">
+            {hasConfig && (
+              <Badge variant="secondary" className="gap-1">
+                <Settings className="w-3 h-3" />
+                Configurado
+              </Badge>
+            )}
+            {hasLinkedFields && (
+              <Badge variant="secondary" className="gap-1">
+                <Zap className="w-3 h-3" />
+                Linkado
+              </Badge>
+            )}
+            {!hasConfig && !hasLinkedFields && (
+              <Badge variant="outline" className="gap-1 text-muted-foreground">
+                <Settings className="w-3 h-3" />
+                Não configurado
+              </Badge>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex-1 gap-2 group/config"
+              onClick={(e) => {
+                e.stopPropagation();
+                data.onConfigure?.(id);
+              }}
+            >
+              <Settings className="w-4 h-4 group-hover/config:rotate-90 transition-transform duration-300" />
+              Configurar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={(e) => {
+                e.stopPropagation();
+                data.onDelete?.(id);
+              }}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Selection Indicator */}
+      {selected && (
+        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-primary/40 rounded-lg -z-10 blur-sm" />
+      )}
     </div>
   );
 });

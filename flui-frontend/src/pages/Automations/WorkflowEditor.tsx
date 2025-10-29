@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import ReactFlow, {
   Node,
   Edge,
@@ -9,113 +9,70 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   MarkerType,
-  EdgeProps,
-  getBezierPath,
-  EdgeLabelRenderer,
   BackgroundVariant,
-  Panel,
+  ReactFlowProvider,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { CustomNode, CustomNodeData } from '@/components/Workflow/CustomNode';
-import { ConditionNode, ConditionNodeData } from '@/components/Workflow/ConditionNode';
-import { ToolSearchModal, ToolItem } from '@/components/Workflow/ToolSearchModal';
-import { NodeConfigModal, NodeConfigData, LinkedField, AvailableOutput } from '@/components/Workflow/NodeConfig/NodeConfigModal';
-import { ConditionConfigModal } from '@/components/Workflow/NodeConfig/ConditionConfigModal';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  X, 
-  Sparkles, 
-  Save, 
-  Play, 
-  Download, 
-  Loader2,
+import {
+  Plus,
+  Sparkles,
   Zap,
   AlertCircle,
   CheckCircle2,
+  Settings,
+  Loader2,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEditor } from '@/contexts/EditorContext';
 import { cn } from '@/lib/utils';
 import { getToolById } from '@/api/tools';
 import { createWebhookForAutomation } from '@/api/webhooks';
-import { extractErrorMessage, apiCall } from '@/lib/error-handler';
-import { 
-  Automation, 
-  updateAutomation, 
+import {
+  Automation,
+  updateAutomation,
   executeAutomation,
   exportAutomation,
   NodeData,
   LinkData,
   NodeType,
 } from '@/api/automations';
+import { CustomNode } from '@/components/Workflow/CustomNode';
+import { ConditionNode } from '@/components/Workflow/ConditionNode';
+import { CustomEdge } from '@/components/Workflow/CustomEdge';
+import { ToolSearchModal } from '@/components/Workflow/ToolSearchModal';
+import { NodeConfigModal } from '@/components/Workflow/NodeConfig/NodeConfigModal';
+import { ConditionConfigModal } from '@/components/Workflow/NodeConfig/ConditionConfigModal';
 
-/**
- * Custom Edge Component com botão de deletar
- */
-function CustomEdge({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  style = {},
-  markerEnd,
-  data,
-}: EdgeProps) {
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  });
+// Tipos
+export interface WorkflowNodeData {
+  label: string;
+  type: 'trigger' | 'tool' | 'agent' | 'condition';
+  description?: string;
+  toolId: string;
+  config: Record<string, any>;
+  inputSchema: any;
+  outputSchema: any;
+  linkedFields?: Record<string, LinkedFieldData>;
+  onConfigure?: (nodeId: string) => void;
+  onDelete?: (nodeId: string) => void;
+}
 
-  const [isHovered, setIsHovered] = useState(false);
+export interface LinkedFieldData {
+  sourceNodeId: string;
+  outputKey: string;
+}
 
-  return (
-    <>
-      <path
-        id={id}
-        style={style}
-        className="react-flow__edge-path stroke-[3px] transition-all hover:stroke-[4px]"
-        d={edgePath}
-        markerEnd={markerEnd}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      />
-      <EdgeLabelRenderer>
-        {isHovered && (
-          <div
-            style={{
-              position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              pointerEvents: 'all',
-            }}
-            className="nodrag nopan animate-in fade-in zoom-in-95 duration-150"
-          >
-            <button
-              className={cn(
-                'flex items-center justify-center',
-                'w-7 h-7 rounded-full',
-                'bg-destructive text-destructive-foreground',
-                'hover:bg-destructive/90',
-                'shadow-xl border-2 border-background',
-                'transition-all hover:scale-110 active:scale-95'
-              )}
-              onClick={() => data?.onDelete?.(id)}
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-      </EdgeLabelRenderer>
-    </>
-  );
+export interface AvailableOutputData {
+  nodeId: string;
+  nodeName: string;
+  outputs: Array<{
+    key: string;
+    type: string;
+    value?: any;
+  }>;
 }
 
 const nodeTypes = {
@@ -131,33 +88,38 @@ interface WorkflowEditorProps {
   automation: Automation;
 }
 
-export function WorkflowEditor({ automation }: WorkflowEditorProps) {
+function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
   // Estados principais
-  const [nodes, setNodes, onNodesChange] = useNodesState<CustomNodeData>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isInitialized, setIsInitialized] = useState(false);
-  
+
   // Estados de modais
   const [toolModalOpen, setToolModalOpen] = useState(false);
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [conditionModalOpen, setConditionModalOpen] = useState(false);
-  const [currentConfigNode, setCurrentConfigNode] = useState<NodeConfigData | null>(null);
-  
+  const [currentConfigNode, setCurrentConfigNode] = useState<{
+    nodeId: string;
+    nodeName: string;
+    config: Record<string, any>;
+    inputSchema: any;
+    outputSchema: any;
+    linkedFields: Record<string, LinkedFieldData>;
+  } | null>(null);
+
   // Estados de ações
   const [saving, setSaving] = useState(false);
   const [executing, setExecuting] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  
+
   const nodeIdCounter = useRef(1);
   const { toast } = useToast();
   const editor = useEditor();
 
   const hasNodes = nodes.length > 0;
-  const hasTrigger = nodes.some(node => node.data.type === 'trigger');
+  const hasTrigger = nodes.some((node) => node.data.type === 'trigger');
   const canExecute = hasTrigger && nodes.length > 0;
 
-  // Inicializar nodes e edges do automation
+  // Inicializar nodes e edges
   useEffect(() => {
     if (!isInitialized && automation) {
       loadAutomationNodes();
@@ -166,47 +128,42 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
 
   const loadAutomationNodes = async () => {
     try {
-      // Converter backend nodes para React Flow format
-      const flowNodes: Node<CustomNodeData>[] = await Promise.all(
+      const flowNodes: Node<WorkflowNodeData>[] = await Promise.all(
         automation.nodes.map(async (node, index) => {
           let toolData = null;
           let inputSchema = { type: 'object', properties: {} };
           let outputSchema = { type: 'object', properties: {} };
 
-          // Buscar dados da tool
           if (node.referenceId) {
             try {
               toolData = await getToolById(node.referenceId);
               inputSchema = toolData.inputSchema || inputSchema;
               outputSchema = toolData.outputSchema || outputSchema;
             } catch (error) {
-              console.warn(`Failed to load tool data for ${node.referenceId}:`, error);
+              console.warn(`Failed to load tool ${node.referenceId}:`, error);
             }
           }
 
-          const isConditionNode = toolData?.name === 'Condition' || node.type === NodeType.CONDITION;
+          const isCondition = toolData?.name === 'Condition' || node.type === NodeType.CONDITION;
 
           return {
             id: node.id,
-            type: isConditionNode ? 'condition' : 'custom',
-            position: node.position || { x: index * 350 + 100, y: 250 },
+            type: isCondition ? 'condition' : 'custom',
+            position: node.position || { x: index * 400 + 100, y: 250 },
             data: {
               label: toolData?.name || `Node ${index + 1}`,
-              type: node.type as CustomNodeData['type'],
+              type: node.type as WorkflowNodeData['type'],
               description: toolData?.description || '',
-              isFirst: index === 0,
               toolId: node.referenceId,
               config: node.config || {},
               inputSchema,
               outputSchema,
-              onConfigure: handleConfigure,
-              onDelete: handleDeleteNode,
+              linkedFields: {},
             },
           };
         })
       );
 
-      // Converter backend links para React Flow edges
       const flowEdges: Edge[] = automation.links.map((link) => ({
         id: `edge-${link.fromNodeId}-${link.toNodeId}`,
         source: link.fromNodeId,
@@ -218,19 +175,16 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
           type: MarkerType.ArrowClosed,
           color: 'hsl(var(--primary))',
         },
-        data: {
-          onDelete: handleDeleteEdge,
-        },
       }));
 
       setNodes(flowNodes);
       setEdges(flowEdges);
       setIsInitialized(true);
     } catch (error) {
-      console.error('Error loading automation nodes:', error);
+      console.error('Error loading automation:', error);
       toast({
         title: 'Erro ao carregar workflow',
-        description: extractErrorMessage(error),
+        description: error instanceof Error ? error.message : 'Erro desconhecido',
         variant: 'destructive',
       });
     }
@@ -239,263 +193,193 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
   // Registrar callbacks no EditorContext
   useEffect(() => {
     editor.setCanExecute(canExecute);
+    editor.setOnSave(() => handleSave);
+    editor.setOnExecute(() => handleExecute);
+    editor.setOnExport(() => handleExport);
+  }, [nodes, edges, canExecute]);
 
-    // Callback de salvar
-    editor.setOnSave(() => async () => {
-      await handleSave();
-    });
-
-    // Callback de executar
-    editor.setOnExecute(() => async () => {
-      await handleExecute();
-    });
-
-    // Callback de exportar
-    editor.setOnExport(() => async () => {
-      await handleExport();
-    });
-  }, [nodes, edges, canExecute, editor]);
-
-  // Calcular posição para novo node
   const getNewNodePosition = useCallback(() => {
     if (nodes.length === 0) {
       return { x: 250, y: 250 };
     }
-
     const lastNode = nodes[nodes.length - 1];
-    return {
-      x: lastNode.position.x + 400,
-      y: lastNode.position.y,
-    };
+    return { x: lastNode.position.x + 400, y: lastNode.position.y };
   }, [nodes]);
 
-  // Handlers de configuração e deleção
-  const handleConfigure = useCallback((nodeId: string) => {
-    const node = nodes.find(n => n.id === nodeId);
-    if (!node) return;
+  const handleConfigure = useCallback(
+    (nodeId: string) => {
+      const node = nodes.find((n) => n.id === nodeId);
+      if (!node) return;
 
-    setCurrentConfigNode({
-      nodeId: node.id,
-      nodeName: node.data.label,
-      config: node.data.config || {},
-      inputSchema: node.data.inputSchema,
-      outputSchema: node.data.outputSchema,
-      linkedFields: (node.data as any).linkedFields || {},
-    });
+      setCurrentConfigNode({
+        nodeId: node.id,
+        nodeName: node.data.label,
+        config: node.data.config || {},
+        inputSchema: node.data.inputSchema,
+        outputSchema: node.data.outputSchema,
+        linkedFields: node.data.linkedFields || {},
+      });
 
-    const isConditionTool = node.data.label === 'Condition' || node.data.subtype === 'condition';
-    if (isConditionTool) {
-      setConditionModalOpen(true);
-    } else {
-      setConfigModalOpen(true);
-    }
-  }, [nodes]);
-
-  const handleDeleteNode = useCallback((nodeId: string) => {
-    setNodes((nds) => nds.filter(n => n.id !== nodeId));
-    setEdges((eds) => eds.filter(e => e.source !== nodeId && e.target !== nodeId));
-    toast({
-      title: 'Nó removido',
-      description: 'O nó foi removido do workflow',
-    });
-  }, [setNodes, setEdges, toast]);
-
-  const handleDeleteEdge = useCallback((edgeId: string) => {
-    setEdges((eds) => eds.filter((e) => e.id !== edgeId));
-    toast({
-      title: 'Conexão removida',
-      description: 'A conexão entre os nós foi removida',
-    });
-  }, [setEdges, toast]);
-
-  // Salvar configuração
-  const handleSaveConfig = useCallback((
-    nodeId: string, 
-    config: Record<string, any>, 
-    linkedFields: Record<string, LinkedField>
-  ) => {
-    setNodes((nds) =>
-      nds.map((node) =>
-        node.id === nodeId
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                config,
-                linkedFields,
-              } as CustomNodeData,
-            }
-          : node
-      )
-    );
-  }, [setNodes]);
-
-  const handleSaveConditionConfig = useCallback(async (config: any) => {
-    if (!currentConfigNode) return;
-
-    setNodes((nds) =>
-      nds.map((node) =>
-        node.id === currentConfigNode.nodeId
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                config,
-              } as ConditionNodeData,
-            }
-          : node
-      )
-    );
-  }, [currentConfigNode, setNodes]);
-
-  // Outputs disponíveis para linkagem
-  const getNodeOutputs = useCallback((node: Node<CustomNodeData>) => {
-    const schema = node.data.outputSchema?.properties || {};
-    return Object.entries(schema).map(([key, value]: [string, any]) => ({
-      key,
-      type: value.type || 'string',
-      value: node.data.config?.[key],
-    }));
-  }, []);
-
-  const availableOutputs: AvailableOutput[] = useMemo(() => {
-    if (!currentConfigNode) return [];
-
-    const currentNodeIndex = nodes.findIndex(n => n.id === currentConfigNode.nodeId);
-    if (currentNodeIndex === -1) return [];
-
-    const previousNodes = nodes.slice(0, currentNodeIndex);
-
-    return previousNodes.map(node => ({
-      nodeId: node.id,
-      nodeName: node.data.label,
-      outputs: getNodeOutputs(node),
-    }));
-  }, [nodes, currentConfigNode, getNodeOutputs]);
-
-  // Adicionar tool ao workflow
-  const handleAddTool = useCallback(async (tool: ToolItem) => {
-    try {
-      const newNodeId = `node-${nodeIdCounter.current++}`;
-      const position = getNewNodePosition();
-
-      // Buscar dados da tool
-      const toolData = await apiCall(() => getToolById(tool.id));
-      if (!toolData) {
-        toast({
-          title: 'Erro ao carregar tool',
-          description: 'Não foi possível carregar os dados da tool',
-          variant: 'destructive',
-        });
-        return;
+      const isCondition = node.data.label === 'Condition' || node.data.type === 'condition';
+      if (isCondition) {
+        setConditionModalOpen(true);
+      } else {
+        setConfigModalOpen(true);
       }
+    },
+    [nodes]
+  );
 
-      let toolIdToUse = tool.id;
-      let initialConfig: Record<string, any> = {};
+  const handleDeleteNode = useCallback(
+    (nodeId: string) => {
+      setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+      setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
+      toast({ title: 'Nó removido', description: 'O nó foi removido do workflow' });
+    },
+    [setNodes, setEdges, toast]
+  );
 
-      // Se for webhook trigger, criar webhook único
-      if (tool.name === 'WebHookTrigger' && automation.id) {
-        try {
-          const webhook = await apiCall(() =>
-            createWebhookForAutomation(automation.id, {
-              method: 'POST',
-              inputs: {},
-            })
-          );
+  const handleDeleteEdge = useCallback(
+    (edgeId: string) => {
+      setEdges((eds) => eds.filter((e) => e.id !== edgeId));
+      toast({ title: 'Conexão removida' });
+    },
+    [setEdges, toast]
+  );
 
-          if (!webhook) {
-            toast({
-              title: 'Erro ao criar webhook',
-              description: 'Não foi possível criar o webhook',
-              variant: 'destructive',
-            });
-            return;
-          }
+  const handleSaveConfig = useCallback(
+    (nodeId: string, config: Record<string, any>, linkedFields: Record<string, LinkedFieldData>) => {
+      setNodes((nds) =>
+        nds.map((node) =>
+          node.id === nodeId
+            ? { ...node, data: { ...node.data, config, linkedFields } }
+            : node
+        )
+      );
+    },
+    [setNodes]
+  );
 
-          toolIdToUse = webhook.id;
-          initialConfig = {
-            url: webhook.url,
-            token: webhook.token,
-            method: webhook.method,
-            inputs: webhook.inputs || {},
-          };
+  const getAvailableOutputs = useCallback(
+    (currentNodeId: string): AvailableOutputData[] => {
+      const currentIndex = nodes.findIndex((n) => n.id === currentNodeId);
+      if (currentIndex === -1) return [];
 
+      const previousNodes = nodes.slice(0, currentIndex);
+      return previousNodes.map((node) => {
+        const schema = node.data.outputSchema?.properties || {};
+        const outputs = Object.entries(schema).map(([key, value]: [string, any]) => ({
+          key,
+          type: value.type || 'string',
+          value: node.data.config?.[key],
+        }));
+
+        return {
+          nodeId: node.id,
+          nodeName: node.data.label,
+          outputs,
+        };
+      });
+    },
+    [nodes]
+  );
+
+  const handleAddTool = useCallback(
+    async (tool: { id: string; name: string; description?: string; type: string; subtype?: string }) => {
+      try {
+        const newNodeId = `node-${nodeIdCounter.current++}`;
+        const position = getNewNodePosition();
+
+        const toolData = await getToolById(tool.id);
+        if (!toolData) {
           toast({
-            title: '✅ Webhook criado',
-            description: 'Webhook único criado para esta automação',
-          });
-        } catch (error: any) {
-          console.error('Error creating webhook:', error);
-          toast({
-            title: 'Erro ao criar webhook',
-            description: extractErrorMessage(error),
+            title: 'Erro',
+            description: 'Não foi possível carregar a tool',
             variant: 'destructive',
           });
           return;
         }
-      }
 
-      const isConditionTool = tool.name === 'Condition';
-      const nodeType = isConditionTool ? 'condition' : 'custom';
+        let toolIdToUse = tool.id;
+        let initialConfig: Record<string, any> = {};
 
-      const newNode: Node<CustomNodeData | ConditionNodeData> = {
-        id: newNodeId,
-        type: nodeType,
-        position,
-        data: {
-          label: tool.name,
-          type: (isConditionTool ? 'condition' : tool.type) as CustomNodeData['type'],
-          subtype: isConditionTool ? 'condition' : tool.subtype,
-          description: tool.description,
-          isFirst: nodes.length === 0,
-          toolId: toolIdToUse,
-          config: initialConfig,
-          inputSchema: toolData.inputSchema || { type: 'object', properties: {} },
-          outputSchema: toolData.outputSchema || { type: 'object', properties: {} },
-          onConfigure: handleConfigure,
-          onDelete: handleDeleteNode,
-        } as any,
-      };
+        // Webhook trigger
+        if (tool.name === 'WebHookTrigger' && automation.id) {
+          try {
+            const webhook = await createWebhookForAutomation(automation.id, {
+              method: 'POST',
+              inputs: {},
+            });
 
-      setNodes((nds) => [...nds, newNode]);
+            toolIdToUse = webhook.id;
+            initialConfig = {
+              url: webhook.url,
+              token: webhook.token,
+              method: webhook.method,
+              inputs: webhook.inputs || {},
+            };
 
-      // Auto-conectar ao último node
-      if (nodes.length > 0) {
-        const lastNode = nodes[nodes.length - 1];
-        const newEdge: Edge = {
-          id: `edge-${lastNode.id}-${newNodeId}`,
-          source: lastNode.id,
-          target: newNodeId,
-          type: 'custom',
-          animated: true,
-          style: { stroke: 'hsl(var(--primary))', strokeWidth: 3 },
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: 'hsl(var(--primary))',
-          },
+            toast({ title: '✅ Webhook criado' });
+          } catch (error) {
+            toast({
+              title: 'Erro ao criar webhook',
+              description: error instanceof Error ? error.message : 'Erro',
+              variant: 'destructive',
+            });
+            return;
+          }
+        }
+
+        const isCondition = tool.name === 'Condition';
+
+        const newNode: Node<WorkflowNodeData> = {
+          id: newNodeId,
+          type: isCondition ? 'condition' : 'custom',
+          position,
           data: {
-            onDelete: handleDeleteEdge,
+            label: tool.name,
+            type: (isCondition ? 'condition' : tool.type) as WorkflowNodeData['type'],
+            description: tool.description,
+            toolId: toolIdToUse,
+            config: initialConfig,
+            inputSchema: toolData.inputSchema || { type: 'object', properties: {} },
+            outputSchema: toolData.outputSchema || { type: 'object', properties: {} },
+            linkedFields: {},
+            onConfigure: handleConfigure,
+            onDelete: handleDeleteNode,
           },
         };
 
-        setEdges((eds) => [...eds, newEdge]);
+        setNodes((nds) => [...nds, newNode]);
+
+        // Auto-conectar
+        if (nodes.length > 0) {
+          const lastNode = nodes[nodes.length - 1];
+          const newEdge: Edge = {
+            id: `edge-${lastNode.id}-${newNodeId}`,
+            source: lastNode.id,
+            target: newNodeId,
+            type: 'custom',
+            animated: true,
+            style: { stroke: 'hsl(var(--primary))', strokeWidth: 3 },
+            markerEnd: { type: MarkerType.ArrowClosed, color: 'hsl(var(--primary))' },
+            data: { onDelete: handleDeleteEdge },
+          };
+          setEdges((eds) => [...eds, newEdge]);
+        }
+
+        toast({ title: '✅ Tool adicionada', description: `${tool.name} foi adicionada` });
+      } catch (error) {
+        toast({
+          title: 'Erro ao adicionar tool',
+          description: error instanceof Error ? error.message : 'Erro',
+          variant: 'destructive',
+        });
       }
+    },
+    [nodes, automation.id, getNewNodePosition, setNodes, setEdges, toast, handleConfigure, handleDeleteNode, handleDeleteEdge]
+  );
 
-      toast({
-        title: '✅ Tool adicionada',
-        description: `${tool.name} foi adicionada ao workflow`,
-      });
-    } catch (error: any) {
-      console.error('Error adding tool:', error);
-      toast({
-        title: 'Erro ao adicionar tool',
-        description: extractErrorMessage(error),
-        variant: 'destructive',
-      });
-    }
-  }, [nodes, automation.id, getNewNodePosition, setNodes, setEdges, toast, handleConfigure, handleDeleteNode]);
-
-  // Conectar nodes
   const onConnect = useCallback(
     (connection: Connection) => {
       const edge: Edge = {
@@ -504,66 +388,35 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
         type: 'custom',
         animated: true,
         style: { stroke: 'hsl(var(--primary))', strokeWidth: 3 },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: 'hsl(var(--primary))',
-        },
-        data: {
-          onDelete: handleDeleteEdge,
-        },
+        markerEnd: { type: MarkerType.ArrowClosed, color: 'hsl(var(--primary))' },
+        data: { onDelete: handleDeleteEdge },
       };
-
       setEdges((eds) => addEdge(edge, eds));
     },
     [setEdges, handleDeleteEdge]
   );
 
-  // Reconectar edges (drag & drop)
-  const onEdgeUpdate = useCallback(
-    (oldEdge: Edge, newConnection: Connection) => {
-      setEdges((eds) => {
-        const filtered = eds.filter((e) => e.id !== oldEdge.id);
-        
-        const newEdge: Edge = {
-          ...newConnection,
-          id: `edge-${newConnection.source}-${newConnection.target}`,
-          type: 'custom',
-          animated: true,
-          style: { stroke: 'hsl(var(--primary))', strokeWidth: 3 },
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: 'hsl(var(--primary))',
-          },
-          data: {
-            onDelete: handleDeleteEdge,
-          },
-        };
-        
-        return addEdge(newEdge, filtered);
-      });
-    },
-    [setEdges, handleDeleteEdge]
-  );
-
-  // Salvar workflow
   const handleSave = async () => {
     try {
       setSaving(true);
 
-      // Converter React Flow format para backend format
       const backendNodes: NodeData[] = nodes.map((node) => ({
         id: node.id,
-        type: node.data.type === 'trigger' ? NodeType.TRIGGER : 
-              node.data.type === 'agent' ? NodeType.AGENT :
-              node.data.type === 'condition' ? NodeType.CONDITION : NodeType.TOOL,
-        referenceId: node.data.toolId || node.id,
+        type:
+          node.data.type === 'trigger'
+            ? NodeType.TRIGGER
+            : node.data.type === 'agent'
+            ? NodeType.AGENT
+            : node.data.type === 'condition'
+            ? NodeType.CONDITION
+            : NodeType.TOOL,
+        referenceId: node.data.toolId,
         config: node.data.config || {},
         position: { x: node.position.x, y: node.position.y },
       }));
 
       const backendLinks: LinkData[] = [];
-      
-      // Adicionar conexões visuais
+
       edges.forEach((edge) => {
         backendLinks.push({
           fromNodeId: edge.source!,
@@ -573,10 +426,9 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
         });
       });
 
-      // Adicionar data links (linkedFields)
       nodes.forEach((node) => {
-        const linkedFields = (node.data as any).linkedFields || {};
-        Object.entries(linkedFields).forEach(([inputKey, link]: [string, any]) => {
+        const linkedFields = node.data.linkedFields || {};
+        Object.entries(linkedFields).forEach(([inputKey, link]) => {
           backendLinks.push({
             fromNodeId: link.sourceNodeId,
             fromOutputKey: link.outputKey,
@@ -593,19 +445,11 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
         links: backendLinks,
       });
 
-      // Feedback visual de sucesso
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
-
-      toast({
-        title: '✅ Salvo com sucesso',
-        description: 'Workflow atualizado',
-      });
-    } catch (error: any) {
-      console.error('Error saving workflow:', error);
+      toast({ title: '✅ Salvo com sucesso' });
+    } catch (error) {
       toast({
         title: 'Erro ao salvar',
-        description: extractErrorMessage(error),
+        description: error instanceof Error ? error.message : 'Erro',
         variant: 'destructive',
       });
     } finally {
@@ -613,12 +457,11 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
     }
   };
 
-  // Executar workflow
   const handleExecute = async () => {
     if (!canExecute) {
       toast({
         title: 'Workflow incompleto',
-        description: 'Adicione pelo menos um trigger para executar',
+        description: 'Adicione um trigger',
         variant: 'destructive',
       });
       return;
@@ -627,16 +470,11 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
     try {
       setExecuting(true);
       await executeAutomation(automation.id);
-      
-      toast({
-        title: '▶️ Executado com sucesso',
-        description: 'Workflow executado',
-      });
-    } catch (error: any) {
-      console.error('Error executing workflow:', error);
+      toast({ title: '▶️ Executado com sucesso' });
+    } catch (error) {
       toast({
         title: 'Erro ao executar',
-        description: extractErrorMessage(error),
+        description: error instanceof Error ? error.message : 'Erro',
         variant: 'destructive',
       });
     } finally {
@@ -644,12 +482,9 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
     }
   };
 
-  // Exportar workflow
   const handleExport = async () => {
     try {
-      setExporting(true);
       const blob = await exportAutomation(automation.id);
-      
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -658,59 +493,61 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
-      toast({
-        title: '📥 Exportado',
-        description: 'Automação exportada como JSON',
-      });
-    } catch (error: any) {
-      console.error('Error exporting workflow:', error);
+      toast({ title: '📥 Exportado' });
+    } catch (error) {
       toast({
         title: 'Erro ao exportar',
-        description: extractErrorMessage(error),
+        description: error instanceof Error ? error.message : 'Erro',
         variant: 'destructive',
       });
-    } finally {
-      setExporting(false);
     }
   };
 
+  // Injetar callbacks nos nodes
+  useEffect(() => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          onConfigure: handleConfigure,
+          onDelete: handleDeleteNode,
+        },
+      }))
+    );
+  }, [handleConfigure, handleDeleteNode]);
+
   return (
     <div className="relative w-full h-full bg-gradient-to-br from-background via-background to-muted/20">
-      {/* Floating Action Button - Add Node */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 animate-in fade-in slide-in-from-top-2 duration-300">
+      {/* Botão Add Node */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-10">
         <Button
           onClick={() => setToolModalOpen(true)}
           size="lg"
           className={cn(
-            "gap-3 px-8 py-6 rounded-2xl shadow-2xl",
-            "bg-gradient-to-r from-primary via-primary to-primary/90",
-            "hover:shadow-primary/30 hover:scale-105",
-            "transition-all duration-300",
-            "border-2 border-primary-foreground/20",
-            "group"
+            'gap-3 px-8 py-6 rounded-2xl shadow-2xl',
+            'bg-gradient-to-r from-primary to-primary/90',
+            'hover:scale-105 transition-all duration-300 group'
           )}
         >
           <div className="relative">
-            <Plus className="w-5 h-5 transition-transform group-hover:rotate-90 duration-300" />
+            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
             <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
           </div>
-          <span className="font-bold text-base">
-            {!hasNodes ? 'Adicionar Trigger' : 'Adicionar Tool'}
-          </span>
+          <span className="font-bold">{!hasNodes ? 'Adicionar Trigger' : 'Adicionar Tool'}</span>
         </Button>
       </div>
 
-      {/* Workflow Stats Panel */}
+      {/* Stats Panel */}
       {hasNodes && (
-        <Panel position="top-right" className="space-y-2 m-4">
+        <div className="absolute top-6 right-6 z-10">
           <Card className="border-2 shadow-xl bg-background/95 backdrop-blur">
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-primary" />
                 <span className="text-sm font-semibold">Workflow Stats</span>
               </div>
-              
+
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Nós:</span>
@@ -737,7 +574,7 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
               </div>
             </CardContent>
           </Card>
-        </Panel>
+        </div>
       )}
 
       {/* React Flow Canvas */}
@@ -747,38 +584,22 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
-        onEdgeUpdate={onEdgeUpdate}
-        edgeReconnectable={true}
-        reconnectRadius={50}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
-        fitViewOptions={{
-          padding: 0.2,
-          includeHiddenNodes: false,
-        }}
-        attributionPosition="bottom-left"
+        fitViewOptions={{ padding: 0.2 }}
         className="bg-transparent"
         minZoom={0.3}
         maxZoom={1.8}
-        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-        proOptions={{ hideAttribution: true }}
         deleteKeyCode={['Backspace', 'Delete']}
         multiSelectionKeyCode={['Meta', 'Ctrl']}
+        proOptions={{ hideAttribution: true }}
       >
-        <Background 
-          gap={24} 
-          size={2} 
-          variant={BackgroundVariant.Dots}
-          className="opacity-40 dark:opacity-30" 
-        />
-        <Controls 
-          className="bg-background/95 backdrop-blur border-2 rounded-xl shadow-xl" 
-          showInteractive={false}
-        />
+        <Background gap={24} size={2} variant={BackgroundVariant.Dots} className="opacity-40" />
+        <Controls className="bg-background/95 backdrop-blur border-2 rounded-xl shadow-xl" />
       </ReactFlow>
 
-      {/* Tool Search Modal */}
+      {/* Modals */}
       <ToolSearchModal
         open={toolModalOpen}
         onClose={() => setToolModalOpen(false)}
@@ -786,30 +607,31 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
         showOnlyTriggers={!hasTrigger}
       />
 
-      {/* Node Config Modal */}
-      <NodeConfigModal
-        open={configModalOpen}
-        onClose={() => setConfigModalOpen(false)}
-        nodeData={currentConfigNode}
-        availableOutputs={availableOutputs}
-        onSave={handleSaveConfig}
-      />
-
-      {/* Condition Config Modal */}
       {currentConfigNode && (
-        <ConditionConfigModal
-          open={conditionModalOpen}
-          onClose={() => setConditionModalOpen(false)}
-          nodeId={currentConfigNode.nodeId}
-          nodeName={currentConfigNode.nodeName}
-          config={{
-            inputField: currentConfigNode.config.inputField,
-            inputSource: currentConfigNode.config.inputSource,
-            conditions: currentConfigNode.config.conditions || [],
-          }}
-          availableOutputs={availableOutputs}
-          onSave={handleSaveConditionConfig}
-        />
+        <>
+          <NodeConfigModal
+            open={configModalOpen}
+            onClose={() => setConfigModalOpen(false)}
+            nodeId={currentConfigNode.nodeId}
+            nodeName={currentConfigNode.nodeName}
+            config={currentConfigNode.config}
+            inputSchema={currentConfigNode.inputSchema}
+            outputSchema={currentConfigNode.outputSchema}
+            linkedFields={currentConfigNode.linkedFields}
+            availableOutputs={getAvailableOutputs(currentConfigNode.nodeId)}
+            onSave={handleSaveConfig}
+          />
+
+          <ConditionConfigModal
+            open={conditionModalOpen}
+            onClose={() => setConditionModalOpen(false)}
+            nodeId={currentConfigNode.nodeId}
+            nodeName={currentConfigNode.nodeName}
+            config={currentConfigNode.config}
+            availableOutputs={getAvailableOutputs(currentConfigNode.nodeId)}
+            onSave={(config) => handleSaveConfig(currentConfigNode.nodeId, config, {})}
+          />
+        </>
       )}
 
       {/* Empty State */}
@@ -827,28 +649,34 @@ export function WorkflowEditor({ automation }: WorkflowEditorProps) {
             <div className="space-y-3 max-w-md">
               <h3 className="text-2xl font-bold">Construa seu Workflow</h3>
               <p className="text-muted-foreground">
-                Clique no botão acima para adicionar um <strong className="text-primary">Trigger</strong> e começar a criar sua automação
+                Clique no botão acima para adicionar um <strong className="text-primary">Trigger</strong> e
+                começar
               </p>
-              <div className="pt-4 space-y-2 text-sm text-muted-foreground">
-                <p>💡 <strong>Dica:</strong> Todo workflow começa com um trigger</p>
-                <p>⚡ Conecte múltiplas tools para criar fluxos complexos</p>
-              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Save Success Indicator */}
-      {saveSuccess && (
-        <div className="absolute top-24 left-1/2 -translate-x-1/2 z-20 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5" />
-            <span className="font-semibold">Salvo com sucesso!</span>
-          </div>
+      {/* Loading Overlay */}
+      {(saving || executing) && (
+        <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="p-8">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-12 h-12 animate-spin text-primary" />
+              <p className="text-lg font-semibold">{saving ? 'Salvando...' : 'Executando...'}</p>
+            </div>
+          </Card>
         </div>
       )}
     </div>
   );
 }
 
-import { Card, CardContent } from '@/components/ui/card';
+// Wrapper com ReactFlowProvider
+export function WorkflowEditor(props: WorkflowEditorProps) {
+  return (
+    <ReactFlowProvider>
+      <WorkflowEditorContent {...props} />
+    </ReactFlowProvider>
+  );
+}

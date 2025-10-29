@@ -3,32 +3,34 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Loader2, Save } from 'lucide-react';
-import { ConfigField } from './ConfigField';
-import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Settings, Link2, Save, X, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-export interface NodeConfigData {
-  nodeId: string;
-  nodeName: string;
-  config: Record<string, any>;
-  inputSchema?: Record<string, any>;
-  outputSchema?: Record<string, any>;
-  linkedFields?: Record<string, LinkedField>;
-}
-
-export interface LinkedField {
+interface LinkedFieldData {
   sourceNodeId: string;
-  sourceNodeName: string;
   outputKey: string;
 }
 
-export interface AvailableOutput {
+interface AvailableOutputData {
   nodeId: string;
   nodeName: string;
   outputs: Array<{
@@ -41,169 +43,352 @@ export interface AvailableOutput {
 interface NodeConfigModalProps {
   open: boolean;
   onClose: () => void;
-  nodeData: NodeConfigData | null;
-  availableOutputs: AvailableOutput[];
-  onSave: (nodeId: string, config: Record<string, any>, linkedFields: Record<string, LinkedField>) => void;
+  nodeId: string;
+  nodeName: string;
+  config: Record<string, any>;
+  inputSchema: any;
+  outputSchema: any;
+  linkedFields: Record<string, LinkedFieldData>;
+  availableOutputs: AvailableOutputData[];
+  onSave: (nodeId: string, config: Record<string, any>, linkedFields: Record<string, LinkedFieldData>) => void;
 }
 
 export function NodeConfigModal({
   open,
   onClose,
-  nodeData,
+  nodeId,
+  nodeName,
+  config: initialConfig,
+  inputSchema,
+  linkedFields: initialLinkedFields,
   availableOutputs,
   onSave,
 }: NodeConfigModalProps) {
-  const [config, setConfig] = useState<Record<string, any>>({});
-  const [linkedFields, setLinkedFields] = useState<Record<string, LinkedField>>({});
-  const [saving, setSaving] = useState(false);
-  const { toast } = useToast();
+  const [config, setConfig] = useState<Record<string, any>>(initialConfig);
+  const [linkedFields, setLinkedFields] = useState<Record<string, LinkedFieldData>>(initialLinkedFields);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (nodeData) {
-      console.log('[NodeConfigModal] nodeData.config:', nodeData.config);
-      setConfig(nodeData.config || {});
-      setLinkedFields(nodeData.linkedFields || {});
+    if (open) {
+      setConfig(initialConfig);
+      setLinkedFields(initialLinkedFields);
+      setErrors({});
     }
-  }, [nodeData]);
+  }, [open, initialConfig, initialLinkedFields]);
 
-  const handleSave = async () => {
-    if (!nodeData) return;
+  const properties = inputSchema?.properties || {};
+  const required = inputSchema?.required || [];
 
-    // Validar campos obrigatórios
-    const schema = nodeData.inputSchema?.properties || {};
-    const required = nodeData.inputSchema?.required || [];
-    const missingFields: string[] = [];
+  const handleConfigChange = (key: string, value: any) => {
+    setConfig((prev) => ({ ...prev, [key]: value }));
+    if (errors[key]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
 
-    required.forEach((fieldName: string) => {
-      const hasValue = config[fieldName] !== undefined && config[fieldName] !== null && config[fieldName] !== '';
-      const hasLink = linkedFields[fieldName] !== undefined;
-      
-      if (!hasValue && !hasLink) {
-        missingFields.push(fieldName);
+  const handleLinkField = (key: string, sourceNodeId: string, outputKey: string) => {
+    setLinkedFields((prev) => ({ ...prev, [key]: { sourceNodeId, outputKey } }));
+    // Limpar config quando linkar
+    setConfig((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const handleUnlinkField = (key: string) => {
+    setLinkedFields((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const isFieldLinked = (key: string) => {
+    return !!linkedFields[key];
+  };
+
+  const getLinkedSource = (key: string) => {
+    const link = linkedFields[key];
+    if (!link) return null;
+
+    const sourceNode = availableOutputs.find((n) => n.nodeId === link.sourceNodeId);
+    return sourceNode ? `${sourceNode.nodeName}.${link.outputKey}` : 'Unknown';
+  };
+
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    required.forEach((key: string) => {
+      if (!config[key] && !linkedFields[key]) {
+        newErrors[key] = 'Campo obrigatório';
       }
     });
 
-    if (missingFields.length > 0) {
-      toast({
-        title: 'Campos obrigatórios não preenchidos',
-        description: `Preencha ou vincule os seguintes campos: ${missingFields.join(', ')}`,
-        variant: 'destructive',
-      });
-      return; // IMPORTANTE: Não permite salvar sem campos obrigatórios
-    }
-
-    setSaving(true);
-    try {
-      await onSave(nodeData.nodeId, config, linkedFields);
-      toast({
-        title: 'Configuração salva',
-        description: 'As configurações do nó foram salvas com sucesso',
-      });
-      onClose();
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao salvar',
-        description: error?.message || 'Ocorreu um erro ao salvar a configuração',
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleFieldChange = (fieldName: string, value: any) => {
-    setConfig((prev) => ({
-      ...prev,
-      [fieldName]: value,
-    }));
+  const handleSave = () => {
+    if (!validate()) return;
+    onSave(nodeId, config, linkedFields);
+    onClose();
   };
 
-  const handleLink = (fieldName: string, link: LinkedField | null) => {
-    if (link) {
-      setLinkedFields((prev) => ({
-        ...prev,
-        [fieldName]: link,
-      }));
-      // Clear the field value when linked
-      setConfig((prev) => ({
-        ...prev,
-        [fieldName]: undefined,
-      }));
-    } else {
-      // Remove link
-      setLinkedFields((prev) => {
-        const newLinked = { ...prev };
-        delete newLinked[fieldName];
-        return newLinked;
-      });
+  const renderField = (key: string, schema: any) => {
+    const isRequired = required.includes(key);
+    const isLinked = isFieldLinked(key);
+    const linkedSource = getLinkedSource(key);
+    const error = errors[key];
+
+    return (
+      <div key={key} className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label htmlFor={key} className="flex items-center gap-2">
+            {schema.title || key}
+            {isRequired && (
+              <Badge variant="destructive" className="text-xs">
+                Obrigatório
+              </Badge>
+            )}
+          </Label>
+          
+          {availableOutputs.length > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 gap-1"
+              onClick={() => {
+                if (isLinked) {
+                  handleUnlinkField(key);
+                }
+              }}
+            >
+              <Link2 className={cn('w-3 h-3', isLinked && 'text-primary')} />
+              {isLinked ? 'Linkado' : 'Linkar'}
+            </Button>
+          )}
+        </div>
+
+        {isLinked ? (
+          <Card className="p-3 bg-primary/5 border-primary/20">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-primary" />
+                <span className="text-sm font-mono text-primary">{linkedSource}</span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7"
+                onClick={() => handleUnlinkField(key)}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          </Card>
+        ) : (
+          <>
+            {schema.type === 'string' && schema.enum ? (
+              <Select
+                value={config[key] || ''}
+                onValueChange={(value) => handleConfigChange(key, value)}
+              >
+                <SelectTrigger className={cn(error && 'border-red-500')}>
+                  <SelectValue placeholder={`Selecione ${schema.title || key}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {schema.enum.map((option: string) => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : schema.type === 'boolean' ? (
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id={key}
+                  checked={config[key] || false}
+                  onCheckedChange={(checked) => handleConfigChange(key, checked)}
+                />
+                <Label htmlFor={key} className="text-sm text-muted-foreground">
+                  {schema.description || 'Ativar/Desativar'}
+                </Label>
+              </div>
+            ) : schema.type === 'number' || schema.type === 'integer' ? (
+              <Input
+                id={key}
+                type="number"
+                value={config[key] || ''}
+                onChange={(e) => handleConfigChange(key, Number(e.target.value))}
+                placeholder={schema.description || `Digite ${schema.title || key}`}
+                className={cn(error && 'border-red-500')}
+              />
+            ) : schema.type === 'object' || schema.type === 'array' ? (
+              <Textarea
+                id={key}
+                value={config[key] ? JSON.stringify(config[key], null, 2) : ''}
+                onChange={(e) => {
+                  try {
+                    const parsed = JSON.parse(e.target.value);
+                    handleConfigChange(key, parsed);
+                  } catch {
+                    // Ignorar erro de parse durante digitação
+                  }
+                }}
+                placeholder={schema.description || `Digite JSON para ${schema.title || key}`}
+                rows={4}
+                className={cn('font-mono text-sm', error && 'border-red-500')}
+              />
+            ) : (
+              <Textarea
+                id={key}
+                value={config[key] || ''}
+                onChange={(e) => handleConfigChange(key, e.target.value)}
+                placeholder={schema.description || `Digite ${schema.title || key}`}
+                rows={3}
+                className={cn(error && 'border-red-500')}
+              />
+            )}
+          </>
+        )}
+
+        {error && (
+          <p className="text-sm text-red-500 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3" />
+            {error}
+          </p>
+        )}
+
+        {schema.description && !error && (
+          <p className="text-xs text-muted-foreground">{schema.description}</p>
+        )}
+      </div>
+    );
+  };
+
+  const renderLinkingTab = () => {
+    if (availableOutputs.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <div className="p-4 bg-muted/50 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <Link2 className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Nenhum output disponível</h3>
+          <p className="text-sm text-muted-foreground">
+            Adicione nodes anteriores a este para poder linkar campos
+          </p>
+        </div>
+      );
     }
+
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Selecione um campo de entrada e conecte-o a um output de um node anterior
+        </p>
+
+        {Object.entries(properties).map(([key, schema]: [string, any]) => (
+          <Card key={key} className="p-4">
+            <h4 className="font-semibold mb-3">{schema.title || key}</h4>
+            
+            <div className="space-y-2">
+              <Label>Fonte de dados:</Label>
+              <Select
+                value={linkedFields[key] ? `${linkedFields[key].sourceNodeId}:${linkedFields[key].outputKey}` : ''}
+                onValueChange={(value) => {
+                  if (value === 'unlink') {
+                    handleUnlinkField(key);
+                  } else {
+                    const [sourceNodeId, outputKey] = value.split(':');
+                    handleLinkField(key, sourceNodeId, outputKey);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma fonte de dados" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unlink">-- Deslinkar --</SelectItem>
+                  {availableOutputs.map((node) =>
+                    node.outputs.map((output) => (
+                      <SelectItem
+                        key={`${node.nodeId}:${output.key}`}
+                        value={`${node.nodeId}:${output.key}`}
+                      >
+                        {node.nodeName}.{output.key} ({output.type})
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </Card>
+        ))}
+      </div>
+    );
   };
-
-  if (!nodeData) return null;
-
-  const schema = nodeData.inputSchema?.properties || {};
-  const required = nodeData.inputSchema?.required || [];
-  const schemaDescription = (nodeData.inputSchema as any)?.description;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] p-0">
-        <DialogHeader className="px-6 pt-6 pb-4">
-          <DialogTitle className="flex items-center gap-2">
-            Configurar: {nodeData.nodeName}
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+            <Settings className="w-6 h-6 text-primary" />
+            Configurar {nodeName}
           </DialogTitle>
           <DialogDescription>
-            Configure os parâmetros do nó e conecte com outputs de nós anteriores
+            Configure os parâmetros e linkagens deste node
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[400px] px-6">
-          {Object.keys(schema).length === 0 ? (
-            <div className="text-center py-8 space-y-2">
-              <div className="text-muted-foreground">
-                {schemaDescription || 'Este nó não possui campos configuráveis'}
-              </div>
-              {schemaDescription && (
-                <div className="text-xs text-muted-foreground/70">
-                  {nodeData.nodeName}
-                </div>
+        <Tabs defaultValue="config" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="config" className="gap-2">
+              <Settings className="w-4 h-4" />
+              Configuração
+            </TabsTrigger>
+            <TabsTrigger value="linking" className="gap-2">
+              <Link2 className="w-4 h-4" />
+              Linkagem
+              {Object.keys(linkedFields).length > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {Object.keys(linkedFields).length}
+                </Badge>
               )}
-            </div>
-          ) : (
-            <div className="space-y-4 pb-4">
-              {Object.entries(schema).map(([fieldName, fieldSchema]: [string, any]) => (
-                <ConfigField
-                  key={fieldName}
-                  fieldName={fieldName}
-                  fieldSchema={fieldSchema}
-                  value={config[fieldName]}
-                  isRequired={required.includes(fieldName)}
-                  linkedField={linkedFields[fieldName]}
-                  availableOutputs={availableOutputs}
-                  onChange={(value) => handleFieldChange(fieldName, value)}
-                  onLink={(link) => handleLink(fieldName, link)}
-                />
-              ))}
-            </div>
-          )}
-        </ScrollArea>
+            </TabsTrigger>
+          </TabsList>
 
-        <DialogFooter className="px-6 pb-6 pt-4 border-t">
-          <Button variant="outline" onClick={onClose} disabled={saving}>
+          <TabsContent value="config" className="space-y-4 mt-4">
+            {Object.keys(properties).length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Este node não possui parâmetros configuráveis</p>
+              </div>
+            ) : (
+              Object.entries(properties).map(([key, schema]: [string, any]) => renderField(key, schema))
+            )}
+          </TabsContent>
+
+          <TabsContent value="linking" className="mt-4">
+            {renderLinkingTab()}
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter className="gap-2">
+          <Button type="button" variant="outline" onClick={onClose}>
+            <X className="w-4 h-4 mr-2" />
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Salvar
-              </>
-            )}
+          <Button type="button" onClick={handleSave}>
+            <Save className="w-4 h-4 mr-2" />
+            Salvar Configuração
           </Button>
         </DialogFooter>
       </DialogContent>
