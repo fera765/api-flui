@@ -14,13 +14,19 @@ export enum AutomationStatus {
   ERROR = 'error',
 }
 
+export interface LinkedFieldData {
+  sourceNodeId: string;
+  outputKey: string;
+}
+
 export interface NodeData {
   id: string;
   type: NodeType;
   referenceId: string;
   config?: Record<string, unknown>;
   outputs?: Record<string, unknown>;
-  position?: { x: number; y: number }; // ✅ FEATURE 2: Salvar posição
+  position?: { x: number; y: number };
+  linkedFields?: Record<string, LinkedFieldData>;
 }
 
 export interface LinkData {

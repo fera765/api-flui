@@ -1,3 +1,8 @@
+/**
+ * WorkflowEditor - v3.0
+ * Sistema completo com persistência de linkedFields
+ */
+
 import { useState, useCallback, useRef, useEffect } from 'react';
 import ReactFlow, {
   Node,
@@ -47,32 +52,24 @@ import { NodeConfigModal } from '@/components/Workflow/NodeConfig/NodeConfigModa
 import { ConditionConfigModal } from '@/components/Workflow/NodeConfig/ConditionConfigModal';
 
 // Tipos
+export interface LinkedFieldData {
+  sourceNodeId: string;
+  sourceNodeName: string;
+  outputKey: string;
+  outputType: string;
+}
+
 export interface WorkflowNodeData {
   label: string;
-  type: 'trigger' | 'tool' | 'agent' | 'condition';
+  type: 'trigger' | 'tool' | 'agent' | 'condition' | 'action' | 'mcp';
   description?: string;
   toolId: string;
   config: Record<string, any>;
   inputSchema: any;
   outputSchema: any;
-  linkedFields?: Record<string, LinkedFieldData>;
+  linkedFields: Record<string, LinkedFieldData>;
   onConfigure?: (nodeId: string) => void;
   onDelete?: (nodeId: string) => void;
-}
-
-export interface LinkedFieldData {
-  sourceNodeId: string;
-  outputKey: string;
-}
-
-export interface AvailableOutputData {
-  nodeId: string;
-  nodeName: string;
-  outputs: Array<{
-    key: string;
-    type: string;
-    value?: any;
-  }>;
 }
 
 const nodeTypes = {
@@ -89,12 +86,10 @@ interface WorkflowEditorProps {
 }
 
 function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
-  // Estados principais
   const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Estados de modais
   const [toolModalOpen, setToolModalOpen] = useState(false);
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [conditionModalOpen, setConditionModalOpen] = useState(false);
@@ -107,7 +102,6 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
     linkedFields: Record<string, LinkedFieldData>;
   } | null>(null);
 
-  // Estados de ações
   const [saving, setSaving] = useState(false);
   const [executing, setExecuting] = useState(false);
 
@@ -119,7 +113,7 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
   const hasTrigger = nodes.some((node) => node.data.type === 'trigger');
   const canExecute = hasTrigger && nodes.length > 0;
 
-  // Inicializar nodes e edges
+  // Inicializar nodes e edges do automation
   useEffect(() => {
     if (!isInitialized && automation) {
       loadAutomationNodes();
@@ -128,6 +122,8 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
 
   const loadAutomationNodes = async () => {
     try {
+      console.log('📥 Loading automation nodes:', automation.nodes.length);
+
       const flowNodes: Node<WorkflowNodeData>[] = await Promise.all(
         automation.nodes.map(async (node, index) => {
           let toolData = null;
@@ -146,6 +142,27 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
 
           const isCondition = toolData?.name === 'Condition' || node.type === NodeType.CONDITION;
 
+          // ✅ CARREGAR linkedFields do backend
+          const backendLinkedFields = (node as any).linkedFields || {};
+          const enrichedLinkedFields: Record<string, LinkedFieldData> = {};
+
+          // Enriquecer com nomes dos nodes para display
+          for (const [key, link] of Object.entries(backendLinkedFields)) {
+            const sourceNode = automation.nodes.find((n) => n.id === (link as any).sourceNodeId);
+            const sourceToolData = sourceNode
+              ? await getToolById(sourceNode.referenceId).catch(() => null)
+              : null;
+
+            enrichedLinkedFields[key] = {
+              sourceNodeId: (link as any).sourceNodeId,
+              sourceNodeName: sourceToolData?.name || 'Unknown Node',
+              outputKey: (link as any).outputKey,
+              outputType: 'string', // TODO: get from schema
+            };
+          }
+
+          console.log(`📦 Node ${node.id} linkedFields:`, enrichedLinkedFields);
+
           return {
             id: node.id,
             type: isCondition ? 'condition' : 'custom',
@@ -158,7 +175,7 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
               config: node.config || {},
               inputSchema,
               outputSchema,
-              linkedFields: {},
+              linkedFields: enrichedLinkedFields, // ✅ CARREGADO
             },
           };
         })
@@ -180,6 +197,8 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
       setNodes(flowNodes);
       setEdges(flowEdges);
       setIsInitialized(true);
+      
+      console.log('✅ Automation loaded with linkedFields');
     } catch (error) {
       console.error('Error loading automation:', error);
       toast({
@@ -199,9 +218,7 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
   }, [nodes, edges, canExecute]);
 
   const getNewNodePosition = useCallback(() => {
-    if (nodes.length === 0) {
-      return { x: 250, y: 250 };
-    }
+    if (nodes.length === 0) return { x: 250, y: 250 };
     const lastNode = nodes[nodes.length - 1];
     return { x: lastNode.position.x + 400, y: lastNode.position.y };
   }, [nodes]);
@@ -210,6 +227,8 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
     (nodeId: string) => {
       const node = nodes.find((n) => n.id === nodeId);
       if (!node) return;
+
+      console.log('⚙️ Opening config for node:', nodeId, 'linkedFields:', node.data.linkedFields);
 
       setCurrentConfigNode({
         nodeId: node.id,
@@ -249,19 +268,33 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
 
   const handleSaveConfig = useCallback(
     (nodeId: string, config: Record<string, any>, linkedFields: Record<string, LinkedFieldData>) => {
+      console.log('💾 Saving config for node:', nodeId, { config, linkedFields });
+
       setNodes((nds) =>
         nds.map((node) =>
           node.id === nodeId
-            ? { ...node, data: { ...node.data, config, linkedFields } }
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  config,
+                  linkedFields, // ✅ SALVAR linkedFields no estado
+                },
+              }
             : node
         )
       );
+
+      toast({
+        title: '✅ Configuração salva',
+        description: 'Use o botão Salvar no header para persistir no backend',
+      });
     },
-    [setNodes]
+    [setNodes, toast]
   );
 
   const getAvailableOutputs = useCallback(
-    (currentNodeId: string): AvailableOutputData[] => {
+    (currentNodeId: string) => {
       const currentIndex = nodes.findIndex((n) => n.id === currentNodeId);
       if (currentIndex === -1) return [];
 
@@ -271,7 +304,7 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
         const outputs = Object.entries(schema).map(([key, value]: [string, any]) => ({
           key,
           type: value.type || 'string',
-          value: node.data.config?.[key],
+          description: value.description,
         }));
 
         return {
@@ -285,7 +318,7 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
   );
 
   const handleAddTool = useCallback(
-    async (tool: { id: string; name: string; description?: string; type: string; subtype?: string }) => {
+    async (tool: { id: string; name: string; description?: string; type: string }) => {
       try {
         const newNodeId = `node-${nodeIdCounter.current++}`;
         const position = getNewNodePosition();
@@ -303,14 +336,12 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
         let toolIdToUse = tool.id;
         let initialConfig: Record<string, any> = {};
 
-        // Webhook trigger
         if (tool.name === 'WebHookTrigger' && automation.id) {
           try {
             const webhook = await createWebhookForAutomation(automation.id, {
               method: 'POST',
               inputs: {},
             });
-
             toolIdToUse = webhook.id;
             initialConfig = {
               url: webhook.url,
@@ -318,7 +349,6 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
               method: webhook.method,
               inputs: webhook.inputs || {},
             };
-
             toast({ title: '✅ Webhook criado' });
           } catch (error) {
             toast({
@@ -344,7 +374,7 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
             config: initialConfig,
             inputSchema: toolData.inputSchema || { type: 'object', properties: {} },
             outputSchema: toolData.outputSchema || { type: 'object', properties: {} },
-            linkedFields: {},
+            linkedFields: {}, // ✅ Inicializar vazio
             onConfigure: handleConfigure,
             onDelete: handleDeleteNode,
           },
@@ -352,7 +382,6 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
 
         setNodes((nds) => [...nds, newNode]);
 
-        // Auto-conectar
         if (nodes.length > 0) {
           const lastNode = nodes[nodes.length - 1];
           const newEdge: Edge = {
@@ -399,21 +428,38 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
   const handleSave = async () => {
     try {
       setSaving(true);
+      console.log('💾 Saving workflow with linkedFields...');
 
-      const backendNodes: NodeData[] = nodes.map((node) => ({
-        id: node.id,
-        type:
-          node.data.type === 'trigger'
-            ? NodeType.TRIGGER
-            : node.data.type === 'agent'
-            ? NodeType.AGENT
-            : node.data.type === 'condition'
-            ? NodeType.CONDITION
-            : NodeType.TOOL,
-        referenceId: node.data.toolId,
-        config: node.data.config || {},
-        position: { x: node.position.x, y: node.position.y },
-      }));
+      // ✅ Converter para formato backend (SIMPLIFICADO)
+      const backendNodes: NodeData[] = nodes.map((node) => {
+        // Simplificar linkedFields para backend (apenas sourceNodeId e outputKey)
+        const simplifiedLinkedFields: Record<string, { sourceNodeId: string; outputKey: string }> = {};
+        
+        Object.entries(node.data.linkedFields || {}).forEach(([key, link]) => {
+          simplifiedLinkedFields[key] = {
+            sourceNodeId: link.sourceNodeId,
+            outputKey: link.outputKey,
+          };
+        });
+
+        return {
+          id: node.id,
+          type:
+            node.data.type === 'trigger'
+              ? NodeType.TRIGGER
+              : node.data.type === 'agent'
+              ? NodeType.AGENT
+              : node.data.type === 'condition'
+              ? NodeType.CONDITION
+              : NodeType.TOOL,
+          referenceId: node.data.toolId,
+          config: node.data.config || {},
+          position: { x: node.position.x, y: node.position.y },
+          linkedFields: simplifiedLinkedFields, // ✅ SALVAR
+        };
+      });
+
+      console.log('📤 Backend nodes:', backendNodes);
 
       const backendLinks: LinkData[] = [];
 
@@ -426,18 +472,6 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
         });
       });
 
-      nodes.forEach((node) => {
-        const linkedFields = node.data.linkedFields || {};
-        Object.entries(linkedFields).forEach(([inputKey, link]) => {
-          backendLinks.push({
-            fromNodeId: link.sourceNodeId,
-            fromOutputKey: link.outputKey,
-            toNodeId: node.id,
-            toInputKey: inputKey,
-          });
-        });
-      });
-
       await updateAutomation(automation.id, {
         name: automation.name,
         description: automation.description,
@@ -445,8 +479,10 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
         links: backendLinks,
       });
 
-      toast({ title: '✅ Salvo com sucesso' });
+      console.log('✅ Workflow saved with linkedFields');
+      toast({ title: '✅ Salvo com sucesso', description: 'LinkedFields persistidos no backend' });
     } catch (error) {
+      console.error('❌ Error saving:', error);
       toast({
         title: 'Erro ao salvar',
         description: error instanceof Error ? error.message : 'Erro',
@@ -505,17 +541,19 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
 
   // Injetar callbacks nos nodes
   useEffect(() => {
-    setNodes((nds) =>
-      nds.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          onConfigure: handleConfigure,
-          onDelete: handleDeleteNode,
-        },
-      }))
-    );
-  }, [handleConfigure, handleDeleteNode]);
+    if (nodes.length > 0) {
+      setNodes((nds) =>
+        nds.map((node) => ({
+          ...node,
+          data: {
+            ...node.data,
+            onConfigure: handleConfigure,
+            onDelete: handleDeleteNode,
+          },
+        }))
+      );
+    }
+  }, [isInitialized]); // Apenas quando inicializado
 
   return (
     <div className="relative w-full h-full bg-gradient-to-br from-background via-background to-muted/20">
@@ -547,7 +585,6 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
                 <Zap className="w-4 h-4 text-primary" />
                 <span className="text-sm font-semibold">Workflow Stats</span>
               </div>
-
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Nós:</span>
@@ -649,8 +686,7 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
             <div className="space-y-3 max-w-md">
               <h3 className="text-2xl font-bold">Construa seu Workflow</h3>
               <p className="text-muted-foreground">
-                Clique no botão acima para adicionar um <strong className="text-primary">Trigger</strong> e
-                começar
+                Clique no botão acima para adicionar um <strong className="text-primary">Trigger</strong>
               </p>
             </div>
           </div>
@@ -672,7 +708,6 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
   );
 }
 
-// Wrapper com ReactFlowProvider
 export function WorkflowEditor(props: WorkflowEditorProps) {
   return (
     <ReactFlowProvider>

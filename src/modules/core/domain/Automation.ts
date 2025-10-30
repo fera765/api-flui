@@ -12,6 +12,11 @@ export enum AutomationStatus {
   ERROR = 'error',
 }
 
+export interface LinkedFieldData {
+  sourceNodeId: string;
+  outputKey: string;
+}
+
 export interface NodeProps {
   id: string;
   type: NodeType;
@@ -19,6 +24,7 @@ export interface NodeProps {
   config?: Record<string, unknown>;
   outputs?: Record<string, unknown>;
   position?: { x: number; y: number };
+  linkedFields?: Record<string, LinkedFieldData>;
 }
 
 export interface NodeResponse {
@@ -28,6 +34,7 @@ export interface NodeResponse {
   config?: Record<string, unknown>;
   outputs?: Record<string, unknown>;
   position?: { x: number; y: number };
+  linkedFields?: Record<string, LinkedFieldData>;
 }
 
 export class Node {
@@ -37,6 +44,7 @@ export class Node {
   private config?: Record<string, unknown>;
   private outputs?: Record<string, unknown>;
   private position?: { x: number; y: number };
+  private linkedFields?: Record<string, LinkedFieldData>;
 
   constructor(props: NodeProps) {
     this.id = props.id;
@@ -45,6 +53,7 @@ export class Node {
     this.config = props.config;
     this.outputs = props.outputs;
     this.position = props.position;
+    this.linkedFields = props.linkedFields;
   }
 
   public getId(): string {
@@ -83,6 +92,14 @@ export class Node {
     this.position = position;
   }
 
+  public getLinkedFields(): Record<string, LinkedFieldData> | undefined {
+    return this.linkedFields;
+  }
+
+  public setLinkedFields(linkedFields: Record<string, LinkedFieldData>): void {
+    this.linkedFields = linkedFields;
+  }
+
   public toJSON(): NodeResponse {
     return {
       id: this.id,
@@ -91,6 +108,7 @@ export class Node {
       config: this.config,
       outputs: this.outputs,
       position: this.position,
+      linkedFields: this.linkedFields,
     };
   }
 }
