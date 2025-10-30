@@ -1,0 +1,3344 @@
+
+> api-backend@1.0.0 test:e2e
+> NODE_ENV=test jest tests/e2e --runInBand --detectOpenHandles --passWithNoTests
+
+FAIL tests/e2e/automation.spec.js
+  ● Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/7945d3e9-bb35-41aa-b24d-2362248eda39
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/7945d3e9-bb35-41aa-b24d-2362248eda39
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  PATCH /api/automations/5f22e98b-1f0f-4270-8eb0-3b769ea1c39a
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/automations/5f22e98b-1f0f-4270-8eb0-3b769ea1c39a
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/automations/40cf3bdf-155f-4f67-b03f-3f28226934f1
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/40cf3bdf-155f-4f67-b03f-3f28226934f1
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/40cf3bdf-155f-4f67-b03f-3f28226934f1
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 404 GET /api/automations/40cf3bdf-155f-4f67-b03f-3f28226934f1 { status: 'error', message: 'Automation not found' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:133:7)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 400 POST /api/automations {
+        status: 'error',
+        message: 'Automation must have at least one trigger node'
+      }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:213:24)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  PATCH /api/automations/b195a55c-232b-43bb-a33f-7f6d2382d8c6
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/automations/b195a55c-232b-43bb-a33f-7f6d2382d8c6
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/ab6d423f-f0d5-4524-8cca-61765c4e4679
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/ab6d423f-f0d5-4524-8cca-61765c4e4679
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  PATCH /api/automations/62d5b419-b540-4bf8-b3af-e08adf05c9a2
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/automations/62d5b419-b540-4bf8-b3af-e08adf05c9a2
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/a339c71a-eda4-40ed-aecb-77e160475aca/execute
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 400 POST /api/automations/a339c71a-eda4-40ed-aecb-77e160475aca/execute {
+        status: 'error',
+        message: 'Automation must have at least one trigger node'
+      }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:396:24)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/9476c082-b213-41c0-8435-d2c9924b8504/execute
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 400 POST /api/automations/9476c082-b213-41c0-8435-d2c9924b8504/execute {
+        status: 'error',
+        message: 'Automation must have at least one trigger node'
+      }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:419:24)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/e3adc884-96a8-41bf-8752-73aeb1c2ac6c/webhooks
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations/e3adc884-96a8-41bf-8752-73aeb1c2ac6c/webhooks
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/05fefc8b-c729-4629-859c-446c698c1afc/webhooks
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations/05fefc8b-c729-4629-859c-446c698c1afc/webhooks
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/webhooks/3876e10d-f513-4af0-8fe3-2d05d612a079
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/webhooks/3876e10d-f513-4af0-8fe3-2d05d612a079
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/42c169e3-7fb6-44fc-a963-64d456e3997f/webhooks
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations/42c169e3-7fb6-44fc-a963-64d456e3997f/webhooks
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  PATCH /api/automations/webhooks/2fce0379-a1eb-4217-899f-b90ade0637ce
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/automations/webhooks/2fce0379-a1eb-4217-899f-b90ade0637ce
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/ef8ad44e-4c1b-4e05-a5cd-376b52985ce7/webhooks
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations/ef8ad44e-4c1b-4e05-a5cd-376b52985ce7/webhooks
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/automations/webhooks/759da680-f203-4caa-a796-a72c97645958
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/webhooks/759da680-f203-4caa-a796-a72c97645958
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/3bd72a1f-ca6b-4af0-b8dc-87e2094d00aa/webhooks
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations/3bd72a1f-ca6b-4af0-b8dc-87e2094d00aa/webhooks
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/webhooks/ee67d375-b9cb-454a-8753-67b956b8dc9e
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 401 POST /api/webhooks/ee67d375-b9cb-454a-8753-67b956b8dc9e { status: 'error', message: 'Invalid webhook token' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:529:24)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 400 POST /api/tools/condition { status: 'error', message: 'Condition name is required' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:542:28)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 400 POST /api/tools/condition { status: 'error', message: 'Condition name is required' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:579:28)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/export/17a028ad-b19f-4b5c-955a-8a19c039f76b
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/export/17a028ad-b19f-4b5c-955a-8a19c039f76b
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/import/validate
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 400 POST /api/automations/import/validate { status: 'error', message: 'Import data is required' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:657:24)
+
+    console.log
+      ➡️  POST /api/automations/import
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 400 POST /api/automations/import { status: 'error', message: 'Import data is required' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:674:24)
+
+    console.log
+      ➡️  GET /api/automations/export/all
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/export/all
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 400 POST /api/tools/condition { status: 'error', message: 'Condition name is required' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:714:28)
+
+    console.log
+      
+      🧹 Starting cleanup...
+
+      at Object.log (tests/e2e/automation.spec.js:37:13)
+
+    console.log
+      ➡️  DELETE /api/automations/6f9c4a41-dbb5-47bb-afb1-69675730c3e9
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/6f9c4a41-dbb5-47bb-afb1-69675730c3e9
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/6f9c4a41-dbb5-47bb-afb1-69675730c3e9
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/7945d3e9-bb35-41aa-b24d-2362248eda39
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/7945d3e9-bb35-41aa-b24d-2362248eda39
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/7945d3e9-bb35-41aa-b24d-2362248eda39
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/5f22e98b-1f0f-4270-8eb0-3b769ea1c39a
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/5f22e98b-1f0f-4270-8eb0-3b769ea1c39a
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/5f22e98b-1f0f-4270-8eb0-3b769ea1c39a
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/8eebf05b-000a-4355-a959-f7cd9ccfe4fa
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/8eebf05b-000a-4355-a959-f7cd9ccfe4fa
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/8eebf05b-000a-4355-a959-f7cd9ccfe4fa
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/b195a55c-232b-43bb-a33f-7f6d2382d8c6
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/b195a55c-232b-43bb-a33f-7f6d2382d8c6
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/b195a55c-232b-43bb-a33f-7f6d2382d8c6
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/ab6d423f-f0d5-4524-8cca-61765c4e4679
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/ab6d423f-f0d5-4524-8cca-61765c4e4679
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/ab6d423f-f0d5-4524-8cca-61765c4e4679
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/62d5b419-b540-4bf8-b3af-e08adf05c9a2
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/62d5b419-b540-4bf8-b3af-e08adf05c9a2
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/62d5b419-b540-4bf8-b3af-e08adf05c9a2
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/a339c71a-eda4-40ed-aecb-77e160475aca
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/a339c71a-eda4-40ed-aecb-77e160475aca
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/a339c71a-eda4-40ed-aecb-77e160475aca
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/9476c082-b213-41c0-8435-d2c9924b8504
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/9476c082-b213-41c0-8435-d2c9924b8504
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/9476c082-b213-41c0-8435-d2c9924b8504
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/e3adc884-96a8-41bf-8752-73aeb1c2ac6c
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/e3adc884-96a8-41bf-8752-73aeb1c2ac6c
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/e3adc884-96a8-41bf-8752-73aeb1c2ac6c
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/05fefc8b-c729-4629-859c-446c698c1afc
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/05fefc8b-c729-4629-859c-446c698c1afc
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/05fefc8b-c729-4629-859c-446c698c1afc
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/42c169e3-7fb6-44fc-a963-64d456e3997f
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/42c169e3-7fb6-44fc-a963-64d456e3997f
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/42c169e3-7fb6-44fc-a963-64d456e3997f
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/ef8ad44e-4c1b-4e05-a5cd-376b52985ce7
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/ef8ad44e-4c1b-4e05-a5cd-376b52985ce7
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/ef8ad44e-4c1b-4e05-a5cd-376b52985ce7
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/3bd72a1f-ca6b-4af0-b8dc-87e2094d00aa
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/3bd72a1f-ca6b-4af0-b8dc-87e2094d00aa
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/3bd72a1f-ca6b-4af0-b8dc-87e2094d00aa
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/17a028ad-b19f-4b5c-955a-8a19c039f76b
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/17a028ad-b19f-4b5c-955a-8a19c039f76b
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/17a028ad-b19f-4b5c-955a-8a19c039f76b
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/agents/af48a0f7-3ba4-4e5c-822c-069797caf3db
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/af48a0f7-3ba4-4e5c-822c-069797caf3db
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/agents/af48a0f7-3ba4-4e5c-822c-069797caf3db
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/agents/bd1af78b-2ede-4156-8b1f-98cd67c8fa6b
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/bd1af78b-2ede-4156-8b1f-98cd67c8fa6b
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/agents/bd1af78b-2ede-4156-8b1f-98cd67c8fa6b
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/f5f4db78-d74e-446b-a080-d76941e7bf7d
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/f5f4db78-d74e-446b-a080-d76941e7bf7d
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/f5f4db78-d74e-446b-a080-d76941e7bf7d
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/3876e10d-f513-4af0-8fe3-2d05d612a079
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/3876e10d-f513-4af0-8fe3-2d05d612a079
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/3876e10d-f513-4af0-8fe3-2d05d612a079
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/2fce0379-a1eb-4217-899f-b90ade0637ce
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/2fce0379-a1eb-4217-899f-b90ade0637ce
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/2fce0379-a1eb-4217-899f-b90ade0637ce
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/ee67d375-b9cb-454a-8753-67b956b8dc9e
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/ee67d375-b9cb-454a-8753-67b956b8dc9e
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/ee67d375-b9cb-454a-8753-67b956b8dc9e
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ✅ Cleanup completed
+
+      at Object.log (tests/e2e/automation.spec.js:52:13)
+
+  ● E2E - Automations (Complete Flow) › 2. Automation with Nodes › should create automation with agent node
+
+    AxiosError: Request failed with status code 400
+
+      211 |     test('should create automation with agent node', async () => {
+      212 |       const name = generateName('automation-with-agent');
+    > 213 |       const response = await client.post('/api/automations', {
+          |                        ^
+      214 |         name,
+      215 |         nodes: [
+      216 |           {
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:213:24)
+
+  ● E2E - Automations (Complete Flow) › 4. Automation Execution › should execute automation and return context
+
+    AxiosError: Request failed with status code 400
+
+      394 |       createdResources.automations.push(created.data.id);
+      395 |
+    > 396 |       const response = await client.post(`/api/automations/${created.data.id}/execute`, {
+          |                        ^
+      397 |         input: { test: 'data' },
+      398 |       });
+      399 |
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:396:24)
+
+  ● E2E - Automations (Complete Flow) › 4. Automation Execution › should handle execution with input data
+
+    AxiosError: Request failed with status code 400
+
+      417 |       };
+      418 |
+    > 419 |       const response = await client.post(`/api/automations/${created.data.id}/execute`, inputData);
+          |                        ^
+      420 |
+      421 |       expect(response.status).toBe(200);
+      422 |       expect(typeof response.data.executedNodes).toBe('object');
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:419:24)
+
+  ● E2E - Automations (Complete Flow) › 5. Automation Webhooks › should execute webhook via POST
+
+    AxiosError: Request failed with status code 401
+
+      527 |       createdResources.tools.push(webhook.data.id);
+      528 |
+    > 529 |       const response = await client.post(`/api/webhooks/${webhook.data.id}`, {
+          |                        ^
+      530 |         email: 'test@example.com',
+      531 |         name: 'John Doe',
+      532 |       });
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:529:24)
+
+  ● E2E - Automations (Complete Flow) › 6. Condition Nodes › should create automation with condition node
+
+    AxiosError: Request failed with status code 400
+
+      540 |     test('should create automation with condition node', async () => {
+      541 |       // Create a condition tool first
+    > 542 |       const conditionRes = await client.post('/api/tools/condition', {
+          |                            ^
+      543 |         name: generateName('condition'),
+      544 |         conditions: [
+      545 |           { id: 'cond-1', label: 'If true', value: 'true' },
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:542:28)
+
+  ● E2E - Automations (Complete Flow) › 6. Condition Nodes › should create branching automation with conditions
+
+    AxiosError: Request failed with status code 400
+
+      577 |       const toolId = toolsRes.data[0].id;
+      578 |
+    > 579 |       const conditionRes = await client.post('/api/tools/condition', {
+          |                            ^
+      580 |         name: generateName('condition-branch'),
+      581 |         conditions: [
+      582 |           { id: 'yes', label: 'If yes', value: 'yes' },
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:579:28)
+
+  ● E2E - Automations (Complete Flow) › 7. Import/Export › should validate import payload
+
+    AxiosError: Request failed with status code 400
+
+      655 |       };
+      656 |
+    > 657 |       const response = await client.post('/api/automations/import/validate', payload);
+          |                        ^
+      658 |       
+      659 |       expect(response.status).toBe(200);
+      660 |       expect(response.data.valid).toBe(true);
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:657:24)
+
+  ● E2E - Automations (Complete Flow) › 7. Import/Export › should import automation
+
+    AxiosError: Request failed with status code 400
+
+      672 |       };
+      673 |
+    > 674 |       const response = await client.post('/api/automations/import', payload);
+          |                        ^
+      675 |       
+      676 |       expect(response.status).toBe(201);
+      677 |       assertSchema(response.data, ['id', 'name', 'nodes', 'links']);
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:674:24)
+
+  ● E2E - Automations (Complete Flow) › 7. Import/Export › should export all automations
+
+    Missing required field: version
+
+      152 |   fields.forEach((field) => {
+      153 |     if (!(field in data)) {
+    > 154 |       throw new Error(`Missing required field: ${field}`);
+          |             ^
+      155 |     }
+      156 |   });
+      157 | }
+
+      at tests/e2e/setup.js:154:13
+          at Array.forEach (<anonymous>)
+      at forEach (tests/e2e/setup.js:152:10)
+      at Object.assertSchema (tests/e2e/automation.spec.js:687:7)
+
+  ● E2E - Automations (Complete Flow) › 8. Complex Automation Flow (Integration) › FULL FLOW: create, configure, execute, and validate
+
+    AxiosError: Request failed with status code 400
+
+      712 |
+      713 |       // 3. Create condition
+    > 714 |       const conditionRes = await client.post('/api/tools/condition', {
+          |                            ^
+      715 |         name: generateName('condition-integration'),
+      716 |         conditions: [
+      717 |           { id: 'success', label: 'Success', value: 'success' },
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/automation.spec.js:714:28)
+
+FAIL tests/e2e/api-coverage.spec.js
+  ● Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ➡️  GET /
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/dashboard/stats
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/dashboard/stats
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/models
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 500 GET /api/models { status: 'error', message: 'Failed to fetch models' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/api-coverage.spec.js:65:24)
+
+    console.log
+      ➡️  GET /api/setting
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/setting
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/setting
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/setting
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/fc8e9743-4336-4853-a6e0-220025bd6f84
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/fc8e9743-4336-4853-a6e0-220025bd6f84
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  PATCH /api/automations/75c3a0d7-48d2-44bb-9dcb-03e830ab60fa
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/automations/75c3a0d7-48d2-44bb-9dcb-03e830ab60fa
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/automations/a1d4b76c-7299-4280-8a3b-a6ba4725c7db
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/a1d4b76c-7299-4280-8a3b-a6ba4725c7db
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/03ad9fef-5580-45f2-8f2c-381c9fca2bc2/execute
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 POST /api/automations/03ad9fef-5580-45f2-8f2c-381c9fca2bc2/execute
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/a7856148-1882-456c-b7e5-102229118cc3/webhooks
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations/a7856148-1882-456c-b7e5-102229118cc3/webhooks
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/webhooks/d4802112-9754-4801-8ab1-f4b4b5999654
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/webhooks/d4802112-9754-4801-8ab1-f4b4b5999654
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  PATCH /api/automations/webhooks/d4802112-9754-4801-8ab1-f4b4b5999654
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/automations/webhooks/d4802112-9754-4801-8ab1-f4b4b5999654
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/automations/webhooks/d4802112-9754-4801-8ab1-f4b4b5999654
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/webhooks/d4802112-9754-4801-8ab1-f4b4b5999654
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/e0d91281-7d10-441d-ae6d-cdc0e72e79f3/webhooks
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations/e0d91281-7d10-441d-ae6d-cdc0e72e79f3/webhooks
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/webhooks/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/webhooks/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/webhooks/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 POST /api/webhooks/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/webhooks/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/webhooks/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/webhooks/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/webhooks/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools/a77a8370-8ae1-4bf3-bfcd-85f7a55d9709
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools/a77a8370-8ae1-4bf3-bfcd-85f7a55d9709
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/tools/d939dd7d-ad2e-4df7-9863-9d75c786bd48
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/d939dd7d-ad2e-4df7-9863-9d75c786bd48
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/a77a8370-8ae1-4bf3-bfcd-85f7a55d9709/execute
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 POST /api/tools/a77a8370-8ae1-4bf3-bfcd-85f7a55d9709/execute
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/all-tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/all-tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/all-tools/search?q=test
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/all-tools/search?q=test
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/agents/7c2aad13-8b5b-4305-87f0-04239f88eb44
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/agents/7c2aad13-8b5b-4305-87f0-04239f88eb44
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  PATCH /api/agents/f6471b1b-4989-4aa2-8445-6910692c0f98
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/agents/f6471b1b-4989-4aa2-8445-6910692c0f98
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/agents/066324f8-268e-4320-99e7-9497c423d876
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/066324f8-268e-4320-99e7-9497c423d876
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/mcps
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/mcps
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ℹ️  MCP metadata requires external package
+
+      at Object.log (tests/e2e/api-coverage.spec.js:407:15)
+
+    console.log
+      ℹ️  MCP import requires external package
+
+      at Object.log (tests/e2e/api-coverage.spec.js:411:15)
+
+    console.log
+      ➡️  GET /api/mcps
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/mcps
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ℹ️  No MCPs available
+
+      at Object.log (tests/e2e/api-coverage.spec.js:417:17)
+
+    console.log
+      ➡️  GET /api/mcps
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/mcps
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ℹ️  No MCPs to delete
+
+      at Object.log (tests/e2e/api-coverage.spec.js:427:17)
+
+    console.log
+      ➡️  GET /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools/condition/xwisfyjjdw
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools/condition/xwisfyjjdw
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  PATCH /api/tools/condition/1t90rvu057g
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/tools/condition/1t90rvu057g
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/tools/condition/xr583yljbqr
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/condition/xr583yljbqr
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition/cojaryronkd/evaluate
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 POST /api/tools/condition/cojaryronkd/evaluate
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/execution/46cfcf64-a58e-4087-8b94-a3078aa4c1b2/start
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 202 POST /api/execution/46cfcf64-a58e-4087-8b94-a3078aa4c1b2/start
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/execution/46cfcf64-a58e-4087-8b94-a3078aa4c1b2/status
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/execution/46cfcf64-a58e-4087-8b94-a3078aa4c1b2/status
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/execution/46cfcf64-a58e-4087-8b94-a3078aa4c1b2/logs
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/execution/46cfcf64-a58e-4087-8b94-a3078aa4c1b2/logs
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ℹ️  SSE endpoint - requires special client, skipping
+
+      at Object.log (tests/e2e/api-coverage.spec.js:553:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/export/3a943def-ad05-418f-aaa1-1de38217c3c9
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/export/3a943def-ad05-418f-aaa1-1de38217c3c9
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/import/validate
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 400 POST /api/automations/import/validate { status: 'error', message: 'Import data is required' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/api-coverage.spec.js:581:24)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/export/84932849-ca34-403f-a658-3ec19ac63bbf
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/export/84932849-ca34-403f-a658-3ec19ac63bbf
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/automations/import
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 400 POST /api/automations/import { status: 'error', message: 'Import data is required' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/api-coverage.spec.js:605:24)
+
+    console.log
+      ➡️  GET /api/automations/export/57f50501-9e66-4e94-ba8f-f7ae3400fc91
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/export/57f50501-9e66-4e94-ba8f-f7ae3400fc91
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/export/all
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/export/all
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ℹ️  TOR import requires multipart ZIP upload
+
+      at Object.log (tests/e2e/api-coverage.spec.js:623:15)
+
+    console.log
+      ➡️  GET /api/tor
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tor
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ℹ️  Requires existing TOR tool
+
+      at Object.log (tests/e2e/api-coverage.spec.js:635:15)
+
+    console.log
+      ➡️  GET /api/tor
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tor
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ℹ️  TOR endpoint not available or no tools
+
+      at Object.log (tests/e2e/api-coverage.spec.js:648:17)
+
+    console.log
+      ℹ️  Requires existing TOR tool to delete
+
+      at Object.log (tests/e2e/api-coverage.spec.js:653:15)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/chats
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/chats
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/chats
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/chats
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9/messages
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 POST /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9/messages
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9/messages
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9/messages
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ℹ️  SSE streaming endpoint - requires special client
+
+      at Object.log (tests/e2e/api-coverage.spec.js:706:15)
+
+    console.log
+      ➡️  PATCH /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9/archive
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9/archive
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/chats
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/chats
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/chats/e75f8961-ea47-4fed-b277-feeab6da621e
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/chats/e75f8961-ea47-4fed-b277-feeab6da621e
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      
+      🧹 Cleaning up API coverage test resources...
+
+      at Object.log (tests/e2e/api-coverage.spec.js:31:13)
+
+    console.log
+      ➡️  DELETE /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/chats/126e5d55-397d-4213-ad0a-ec2198d6aaa9
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/55529251-b8aa-4784-888c-f78f15a8d807
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/55529251-b8aa-4784-888c-f78f15a8d807
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/55529251-b8aa-4784-888c-f78f15a8d807
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/fc8e9743-4336-4853-a6e0-220025bd6f84
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/fc8e9743-4336-4853-a6e0-220025bd6f84
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/fc8e9743-4336-4853-a6e0-220025bd6f84
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/75c3a0d7-48d2-44bb-9dcb-03e830ab60fa
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/75c3a0d7-48d2-44bb-9dcb-03e830ab60fa
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/75c3a0d7-48d2-44bb-9dcb-03e830ab60fa
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/03ad9fef-5580-45f2-8f2c-381c9fca2bc2
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/03ad9fef-5580-45f2-8f2c-381c9fca2bc2
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/03ad9fef-5580-45f2-8f2c-381c9fca2bc2
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/a7856148-1882-456c-b7e5-102229118cc3
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/a7856148-1882-456c-b7e5-102229118cc3
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/a7856148-1882-456c-b7e5-102229118cc3
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/e0d91281-7d10-441d-ae6d-cdc0e72e79f3
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/e0d91281-7d10-441d-ae6d-cdc0e72e79f3
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/e0d91281-7d10-441d-ae6d-cdc0e72e79f3
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/46cfcf64-a58e-4087-8b94-a3078aa4c1b2
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/46cfcf64-a58e-4087-8b94-a3078aa4c1b2
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/46cfcf64-a58e-4087-8b94-a3078aa4c1b2
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/57f50501-9e66-4e94-ba8f-f7ae3400fc91
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/57f50501-9e66-4e94-ba8f-f7ae3400fc91
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/57f50501-9e66-4e94-ba8f-f7ae3400fc91
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/3a943def-ad05-418f-aaa1-1de38217c3c9
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/3a943def-ad05-418f-aaa1-1de38217c3c9
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/3a943def-ad05-418f-aaa1-1de38217c3c9
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/84932849-ca34-403f-a658-3ec19ac63bbf
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/84932849-ca34-403f-a658-3ec19ac63bbf
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/84932849-ca34-403f-a658-3ec19ac63bbf
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/automations/a61584fb-2383-451c-b108-756fd161d9c6
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/a61584fb-2383-451c-b108-756fd161d9c6
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/automations/a61584fb-2383-451c-b108-756fd161d9c6
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/agents/ab64054b-fe76-4a9f-a4c8-462e5d569e62
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/ab64054b-fe76-4a9f-a4c8-462e5d569e62
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/agents/ab64054b-fe76-4a9f-a4c8-462e5d569e62
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/agents/7c2aad13-8b5b-4305-87f0-04239f88eb44
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/7c2aad13-8b5b-4305-87f0-04239f88eb44
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/agents/7c2aad13-8b5b-4305-87f0-04239f88eb44
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/agents/f6471b1b-4989-4aa2-8445-6910692c0f98
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/f6471b1b-4989-4aa2-8445-6910692c0f98
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/agents/f6471b1b-4989-4aa2-8445-6910692c0f98
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/d4802112-9754-4801-8ab1-f4b4b5999654
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 404 DELETE /api/tools/d4802112-9754-4801-8ab1-f4b4b5999654 { status: 'error', message: 'Tool not found' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at cleanup (tests/e2e/setup.js:166:5)
+      at Object.<anonymous> (tests/e2e/api-coverage.spec.js:43:7)
+
+    console.log
+      🧹 Already deleted: /api/tools/d4802112-9754-4801-8ab1-f4b4b5999654
+
+      at log (tests/e2e/setup.js:170:15)
+
+    console.log
+      ➡️  DELETE /api/tools/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/38b1b900-ecd9-49b0-89fb-d67ab1424540
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/16ea475a-bdaf-4142-ab05-f5b41fdf2afd
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/16ea475a-bdaf-4142-ab05-f5b41fdf2afd
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/16ea475a-bdaf-4142-ab05-f5b41fdf2afd
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/condition/i70pgr88brg
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/condition/i70pgr88brg
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/condition/i70pgr88brg
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/condition/xwisfyjjdw
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/condition/xwisfyjjdw
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/condition/xwisfyjjdw
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/condition/1t90rvu057g
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/condition/1t90rvu057g
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/condition/1t90rvu057g
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/condition/cojaryronkd
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/condition/cojaryronkd
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/condition/cojaryronkd
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ✅ API coverage cleanup completed
+
+      at Object.log (tests/e2e/api-coverage.spec.js:49:13)
+
+  ● E2E - Complete API Coverage › Health & Config (5 endpoints) › GET /api/models
+
+    AxiosError: Request failed with status code 500
+
+      63 |
+      64 |     test('GET /api/models', async () => {
+    > 65 |       const response = await client.get('/api/models');
+         |                        ^
+      66 |       expect(response.status).toBe(200);
+      67 |       expect(response.data.models).toBeDefined();
+      68 |     });
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/api-coverage.spec.js:65:24)
+
+  ● E2E - Complete API Coverage › Import/Export (4 endpoints) › POST /api/automations/import/validate
+
+    AxiosError: Request failed with status code 400
+
+      579 |       const exported = await client.get(`/api/automations/export/${auto.data.id}`);
+      580 |       
+    > 581 |       const response = await client.post('/api/automations/import/validate', exported.data);
+          |                        ^
+      582 |       expect(response.status).toBe(200);
+      583 |     });
+      584 |
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/api-coverage.spec.js:581:24)
+
+  ● E2E - Complete API Coverage › Import/Export (4 endpoints) › POST /api/automations/import
+
+    AxiosError: Request failed with status code 400
+
+      603 |       };
+      604 |       
+    > 605 |       const response = await client.post('/api/automations/import', importData);
+          |                        ^
+      606 |       expect(response.status).toBe(201);
+      607 |       createdResources.automations.push(response.data.id);
+      608 |     });
+
+      at settle (node_modules/axios/lib/core/settle.js:19:12)
+      at IncomingMessage.handleStreamEnd (node_modules/axios/lib/adapters/http.js:792:11)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:45:41)
+      at Object.<anonymous> (tests/e2e/api-coverage.spec.js:605:24)
+
+  ● E2E - Complete API Coverage › TOR - Tool Onboarding Registry (5 endpoints) › GET /api/tor
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      628 |       expect([200, 404]).toContain(response.status);
+      629 |       if (response.status === 200) {
+    > 630 |         expect(Array.isArray(response.data)).toBe(true);
+          |                                              ^
+      631 |       }
+      632 |     });
+      633 |
+
+      at Object.toBe (tests/e2e/api-coverage.spec.js:630:46)
+
+PASS tests/e2e/crud.spec.js
+  ● Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/agents/9df41c83-ca62-478a-90c1-f0a640bd5b28
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/agents/9df41c83-ca62-478a-90c1-f0a640bd5b28
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  PATCH /api/agents/29e83d04-8137-402c-a699-84fd29993838
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/agents/29e83d04-8137-402c-a699-84fd29993838
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/agents/6ca4dfd7-18af-45f9-955a-726d81fd9ab9
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/6ca4dfd7-18af-45f9-955a-726d81fd9ab9
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/agents/6ca4dfd7-18af-45f9-955a-726d81fd9ab9
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 404 GET /api/agents/6ca4dfd7-18af-45f9-955a-726d81fd9ab9 { status: 'error', message: 'Agent not found' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/crud.spec.js:126:7)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools/a77a8370-8ae1-4bf3-bfcd-85f7a55d9709
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools/a77a8370-8ae1-4bf3-bfcd-85f7a55d9709
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/tools/17086d7f-2e4f-4a89-939a-e17f765bd5d3
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/17086d7f-2e4f-4a89-939a-e17f765bd5d3
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/a77a8370-8ae1-4bf3-bfcd-85f7a55d9709/execute
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 POST /api/tools/a77a8370-8ae1-4bf3-bfcd-85f7a55d9709/execute
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/tools/condition/7avm0s5z8aq
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools/condition/7avm0s5z8aq
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  PATCH /api/tools/condition/vhr3099kmuq
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 PATCH /api/tools/condition/vhr3099kmuq
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition/9i0995ma0qm/evaluate
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 POST /api/tools/condition/9i0995ma0qm/evaluate
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/tools/condition/pml9a5ny1u
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/condition/pml9a5ny1u
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/mcps
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/mcps
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ℹ️  MCP metadata fetch requires external package - skipping
+
+      at Object.log (tests/e2e/crud.spec.js:350:15)
+
+    console.log
+      ℹ️  MCP import requires external package - skipping
+
+      at Object.log (tests/e2e/crud.spec.js:356:15)
+
+    console.log
+         To test manually: POST /api/mcps/import with { source: "npm:package-name" }
+
+      at Object.log (tests/e2e/crud.spec.js:357:15)
+
+    console.log
+      ➡️  GET /api/mcps
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/mcps
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ℹ️  No MCPs available - skipping MCP tools test
+
+      at Object.log (tests/e2e/crud.spec.js:364:17)
+
+    console.log
+      ➡️  GET /api/all-tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/all-tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/all-tools?category=system
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/all-tools?category=system
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/all-tools?page=1&pageSize=10
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/all-tools?page=1&pageSize=10
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/all-tools/search?q=file
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/all-tools/search?q=file
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      
+      🧹 Cleaning up CRUD test resources...
+
+      at Object.log (tests/e2e/crud.spec.js:31:13)
+
+    console.log
+      ➡️  DELETE /api/agents/fa60e119-6878-4fda-b3b4-70c87355b031
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/fa60e119-6878-4fda-b3b4-70c87355b031
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/agents/fa60e119-6878-4fda-b3b4-70c87355b031
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/agents/9df41c83-ca62-478a-90c1-f0a640bd5b28
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/9df41c83-ca62-478a-90c1-f0a640bd5b28
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/agents/9df41c83-ca62-478a-90c1-f0a640bd5b28
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/agents/29e83d04-8137-402c-a699-84fd29993838
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/29e83d04-8137-402c-a699-84fd29993838
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/agents/29e83d04-8137-402c-a699-84fd29993838
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/agents/caea3780-5189-479c-98ee-ffb42362bfec
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/agents/caea3780-5189-479c-98ee-ffb42362bfec
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/agents/caea3780-5189-479c-98ee-ffb42362bfec
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/d28be9db-456c-482e-b1f5-411541421571
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/d28be9db-456c-482e-b1f5-411541421571
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/d28be9db-456c-482e-b1f5-411541421571
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/condition/d43gits9akr
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/condition/d43gits9akr
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/condition/d43gits9akr
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/condition/7avm0s5z8aq
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/condition/7avm0s5z8aq
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/condition/7avm0s5z8aq
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/condition/vhr3099kmuq
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/condition/vhr3099kmuq
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/condition/vhr3099kmuq
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ➡️  DELETE /api/tools/condition/9i0995ma0qm
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/tools/condition/9i0995ma0qm
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      🧹 Cleaned up: /api/tools/condition/9i0995ma0qm
+
+      at log (tests/e2e/setup.js:167:13)
+
+    console.log
+      ✅ CRUD cleanup completed
+
+      at Object.log (tests/e2e/crud.spec.js:46:13)
+
+PASS tests/e2e/cleanup.spec.js
+  ● Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ➡️  GET /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      Found 0 test automations to clean up
+
+      at Object.log (tests/e2e/cleanup.spec.js:28:15)
+
+    console.log
+      ➡️  GET /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      Found 0 test agents to clean up
+
+      at Object.log (tests/e2e/cleanup.spec.js:46:15)
+
+    console.log
+      ➡️  GET /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      Found 0 test conditions to clean up
+
+      at Object.log (tests/e2e/cleanup.spec.js:64:15)
+
+    console.log
+      ➡️  GET /api/chats
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/chats
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      Found 0 test chats to clean up
+
+      at Object.log (tests/e2e/cleanup.spec.js:83:17)
+
+    console.log
+      ➡️  GET /
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/dashboard/stats
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/dashboard/stats
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      📊 Current system state: {
+        agents: { total: 0 },
+        mcps: { total: 0, connected: 0 },
+        automations: { total: 0 },
+        tools: { system: 13, mcp: 0, agent: 0, total: 13 }
+      }
+
+      at Object.log (tests/e2e/cleanup.spec.js:109:15)
+
+    console.log
+      ➡️  GET /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ✅ GET /api/automations - 200
+
+      at Object.log (tests/e2e/cleanup.spec.js:131:19)
+
+    console.log
+      ➡️  GET /api/agents
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/agents
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ✅ GET /api/agents - 200
+
+      at Object.log (tests/e2e/cleanup.spec.js:131:19)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ✅ GET /api/tools - 200
+
+      at Object.log (tests/e2e/cleanup.spec.js:131:19)
+
+    console.log
+      ➡️  GET /api/tools/condition
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools/condition
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ✅ GET /api/tools/condition - 200
+
+      at Object.log (tests/e2e/cleanup.spec.js:131:19)
+
+    console.log
+      ➡️  GET /api/mcps
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/mcps
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ✅ GET /api/mcps - 200
+
+      at Object.log (tests/e2e/cleanup.spec.js:131:19)
+
+    console.log
+      ➡️  GET /api/all-tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/all-tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ✅ GET /api/all-tools - 200
+
+      at Object.log (tests/e2e/cleanup.spec.js:131:19)
+
+    console.log
+      ➡️  GET /api/chats
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/chats
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ✅ GET /api/chats - 200
+
+      at Object.log (tests/e2e/cleanup.spec.js:131:19)
+
+    console.log
+      ➡️  GET /api/tor
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tor
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ✅ GET /api/tor - 200
+
+      at Object.log (tests/e2e/cleanup.spec.js:131:19)
+
+    console.log
+      ➡️  POST /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 201 POST /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/bc3eeec4-2af9-484c-a056-35e95db6100b
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations/bc3eeec4-2af9-484c-a056-35e95db6100b
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  DELETE /api/automations/bc3eeec4-2af9-484c-a056-35e95db6100b
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 204 DELETE /api/automations/bc3eeec4-2af9-484c-a056-35e95db6100b
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations/bc3eeec4-2af9-484c-a056-35e95db6100b
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.error
+      ❌ 404 GET /api/automations/bc3eeec4-2af9-484c-a056-35e95db6100b { status: 'error', message: 'Automation not found' }
+
+      56 |     (error) => {
+      57 |       if (error.response) {
+    > 58 |         console.error(
+         |                 ^
+      59 |           `❌ ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`,
+      60 |           error.response.data
+      61 |         );
+
+      at error (tests/e2e/setup.js:58:17)
+      at Axios.request (node_modules/axios/lib/core/Axios.js:40:14)
+      at Object.<anonymous> (tests/e2e/cleanup.spec.js:157:7)
+
+    console.log
+      ✅ CRUD cycle completed successfully
+
+      at Object.log (tests/e2e/cleanup.spec.js:161:15)
+
+    console.log
+      ➡️  GET /api/tools
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/tools
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      Found 1 webhook tools
+
+      at Object.log (tests/e2e/cleanup.spec.js:172:15)
+
+    console.log
+      ℹ️  Webhook tools found (may be legitimate)
+
+      at Object.log (tests/e2e/cleanup.spec.js:176:17)
+
+    console.log
+      ➡️  GET /api/dashboard/stats
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/dashboard/stats
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      
+      📊 Final System Statistics:
+
+      at Object.log (tests/e2e/cleanup.spec.js:183:15)
+
+    console.log
+      ==========================
+
+      at Object.log (tests/e2e/cleanup.spec.js:184:15)
+
+    console.log
+      Automations: 0
+
+      at Object.log (tests/e2e/cleanup.spec.js:185:15)
+
+    console.log
+      Agents: 0
+
+      at Object.log (tests/e2e/cleanup.spec.js:186:15)
+
+    console.log
+      MCPs: 0
+
+      at Object.log (tests/e2e/cleanup.spec.js:187:15)
+
+    console.log
+      System Tools: 13
+
+      at Object.log (tests/e2e/cleanup.spec.js:188:15)
+
+    console.log
+      Total Tools: 13
+
+      at Object.log (tests/e2e/cleanup.spec.js:189:15)
+
+    console.log
+      ==========================
+
+      at Object.log (tests/e2e/cleanup.spec.js:190:15)
+
+    console.log
+      ➡️  GET /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      ➡️  GET /api/automations
+
+      at log (tests/e2e/setup.js:41:15)
+
+    console.log
+      ✅ 200 GET /api/automations
+
+      at log (tests/e2e/setup.js:53:15)
+
+    console.log
+      Cleaned up 0 test automations
+
+      at Object.log (tests/e2e/cleanup.spec.js:216:15)
+
+
+Test Suites: 2 failed, 2 passed, 4 total
+Tests:       14 failed, 106 passed, 120 total
+Snapshots:   0 total
+Time:        2.036 s, estimated 3 s
+Ran all test suites matching /tests\/e2e/i.
