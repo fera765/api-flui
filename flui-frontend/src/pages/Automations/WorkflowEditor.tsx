@@ -444,21 +444,27 @@ function WorkflowEditorContent({ automation }: WorkflowEditorProps) {
     }
   };
 
-  // Injetar callbacks quando nodes mudarem
+  // Injetar callbacks sempre que mudarem
   useEffect(() => {
-    if (nodes.length > 0 && isInitialized) {
+    if (nodes.length > 0) {
       setNodes((nds) =>
-        nds.map((node) => ({
-          ...node,
-          data: {
-            ...node.data,
-            onConfigure: handleConfigure,
-            onDelete: handleDeleteNode,
-          },
-        }))
+        nds.map((node) => {
+          // Evitar loop infinito: só atualizar se callbacks forem diferentes
+          if (node.data.onConfigure !== handleConfigure || node.data.onDelete !== handleDeleteNode) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                onConfigure: handleConfigure,
+                onDelete: handleDeleteNode,
+              },
+            };
+          }
+          return node;
+        })
       );
     }
-  }, [isInitialized]);
+  }, [handleConfigure, handleDeleteNode]);
 
   // Registrar callbacks no EditorContext
   useEffect(() => {
