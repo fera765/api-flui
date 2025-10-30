@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -22,14 +21,17 @@ import {
   Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getAllTools } from '@/api/tools';
+import { getAllTools, AllToolsResponse, Tool } from '@/api/tools';
 
 export interface ToolItem {
   id: string;
   name: string;
   description?: string;
-  type: 'trigger' | 'action' | 'mcp';
+  type: 'trigger' | 'action' | 'mcp' | 'agent';
   subtype?: string;
+  source?: string;
+  mcpName?: string;
+  agentName?: string;
 }
 
 interface ToolSearchModalProps {
@@ -53,10 +55,16 @@ const typeConfig = {
     label: 'Action',
   },
   mcp: {
-    icon: Bot,
+    icon: Zap,
     color: 'from-green-500/20 to-green-600/20',
     badgeClass: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
     label: 'MCP',
+  },
+  agent: {
+    icon: Bot,
+    color: 'from-cyan-500/20 to-cyan-600/20',
+    badgeClass: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
+    label: 'Agent',
   },
   condition: {
     icon: GitBranch,
@@ -67,6 +75,7 @@ const typeConfig = {
 };
 
 export function ToolSearchModal({ open, onClose, onSelectTool, showOnlyTriggers }: ToolSearchModalProps) {
+  const [allToolsData, setAllToolsData] = useState<AllToolsResponse | null>(null);
   const [tools, setTools] = useState<ToolItem[]>([]);
   const [filteredTools, setFilteredTools] = useState<ToolItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -85,23 +94,64 @@ export function ToolSearchModal({ open, onClose, onSelectTool, showOnlyTriggers 
     filterTools();
   }, [tools, searchQuery, activeTab]);
 
+  const convertToolToItem = (tool: Tool, type: 'trigger' | 'action' | 'mcp' | 'agent', source?: { type: string; name: string }): ToolItem => {
+    return {
+      id: tool.id,
+      name: tool.name,
+      description: tool.description,
+      type: type,
+      subtype: tool.type,
+      source: source?.type,
+      mcpName: source?.type === 'mcp' ? source.name : undefined,
+      agentName: source?.type === 'agent' ? source.name : undefined,
+    };
+  };
+
   const loadTools = async () => {
     try {
       setLoading(true);
-      const data = await getAllTools();
+      const data = await getAllTools({ pageSize: 1000 });
+      setAllToolsData(data);
       
-      // Converter formato da API para ToolItem
-      const toolItems: ToolItem[] = data.map((tool: any) => ({
-        id: tool.id,
-        name: tool.name,
-        description: tool.description,
-        type: tool.type || 'action',
-        subtype: tool.subtype,
-      }));
+      const toolItems: ToolItem[] = [];
 
+      // System Tools (triggers e actions)
+      if (data.tools.system) {
+        data.tools.system.forEach((tool: Tool) => {
+          // Identificar se é trigger ou action baseado no tipo
+          const isTrigger = tool.type === 'trigger' || tool.name.toLowerCase().includes('trigger');
+          toolItems.push(convertToolToItem(tool, isTrigger ? 'trigger' : 'action'));
+        });
+      }
+
+      // MCP Tools
+      if (data.tools.mcps) {
+        data.tools.mcps.forEach((mcpGroup: any) => {
+          mcpGroup.tools.forEach((tool: Tool) => {
+            toolItems.push(convertToolToItem(tool, 'mcp', { type: 'mcp', name: mcpGroup.mcp.name }));
+          });
+        });
+      }
+
+      // Agents (agents themselves are tools)
+      if (data.tools.agents) {
+        data.tools.agents.forEach((agentGroup: any) => {
+          // Add agent as a tool
+          toolItems.push({
+            id: agentGroup.agent.id,
+            name: agentGroup.agent.name,
+            description: agentGroup.agent.description || 'AI Agent',
+            type: 'agent',
+            subtype: 'agent',
+          });
+        });
+      }
+
+      console.log('Loaded tools:', toolItems.length);
       setTools(toolItems);
     } catch (error) {
       console.error('Error loading tools:', error);
+      setTools([]);
     } finally {
       setLoading(false);
     }
@@ -125,7 +175,9 @@ export function ToolSearchModal({ open, onClose, onSelectTool, showOnlyTriggers 
       filtered = filtered.filter(
         (tool) =>
           tool.name.toLowerCase().includes(query) ||
-          tool.description?.toLowerCase().includes(query)
+          tool.description?.toLowerCase().includes(query) ||
+          tool.mcpName?.toLowerCase().includes(query) ||
+          tool.agentName?.toLowerCase().includes(query)
       );
     }
 
@@ -179,9 +231,9 @@ export function ToolSearchModal({ open, onClose, onSelectTool, showOnlyTriggers 
         {/* Tabs */}
         {!showOnlyTriggers && (
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="all" className="gap-2">
-                <Zap className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" />
                 Todas
                 <Badge variant="secondary" className="ml-1">{tools.length}</Badge>
               </TabsTrigger>
@@ -196,9 +248,14 @@ export function ToolSearchModal({ open, onClose, onSelectTool, showOnlyTriggers 
                 <Badge variant="secondary" className="ml-1">{getToolsByType('action')}</Badge>
               </TabsTrigger>
               <TabsTrigger value="mcp" className="gap-2">
-                <Bot className="w-4 h-4" />
+                <Zap className="w-4 h-4" />
                 MCPs
                 <Badge variant="secondary" className="ml-1">{getToolsByType('mcp')}</Badge>
+              </TabsTrigger>
+              <TabsTrigger value="agent" className="gap-2">
+                <Bot className="w-4 h-4" />
+                Agents
+                <Badge variant="secondary" className="ml-1">{getToolsByType('agent')}</Badge>
               </TabsTrigger>
               <TabsTrigger value="condition" className="gap-2">
                 <GitBranch className="w-4 h-4" />
@@ -225,7 +282,9 @@ export function ToolSearchModal({ open, onClose, onSelectTool, showOnlyTriggers 
               </div>
               <h3 className="text-lg font-semibold mb-2">Nenhuma tool encontrada</h3>
               <p className="text-sm text-muted-foreground">
-                Tente ajustar os filtros ou termos de busca
+                {tools.length === 0 
+                  ? 'Nenhuma tool disponível no sistema. Configure tools, MCPs ou Agents primeiro.'
+                  : 'Tente ajustar os filtros ou termos de busca'}
               </p>
             </div>
           ) : (
@@ -260,11 +319,24 @@ export function ToolSearchModal({ open, onClose, onSelectTool, showOnlyTriggers 
                                   {tool.description}
                                 </CardDescription>
                               )}
+                              {/* Source badges */}
+                              <div className="flex gap-1 mt-2">
+                                <Badge className={cn('text-xs whitespace-nowrap', config.badgeClass)}>
+                                  {config.label}
+                                </Badge>
+                                {tool.mcpName && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {tool.mcpName}
+                                  </Badge>
+                                )}
+                                {tool.agentName && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {tool.agentName}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </div>
-                          <Badge className={cn('text-xs whitespace-nowrap', config.badgeClass)}>
-                            {config.label}
-                          </Badge>
                         </div>
                       </CardHeader>
                     </div>
@@ -281,6 +353,18 @@ export function ToolSearchModal({ open, onClose, onSelectTool, showOnlyTriggers 
             <p className="text-sm text-muted-foreground text-center">
               💡 <strong>Dica:</strong> Clique em uma tool para adicioná-la ao workflow
             </p>
+          </div>
+        )}
+
+        {/* Summary */}
+        {!loading && allToolsData && (
+          <div className="border-t pt-3">
+            <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+              <span>System: {allToolsData.summary.systemTools}</span>
+              <span>MCPs: {allToolsData.summary.mcpTools}</span>
+              <span>Agents: {allToolsData.summary.agentTools}</span>
+              <span className="font-semibold">Total: {allToolsData.summary.totalTools}</span>
+            </div>
           </div>
         )}
       </DialogContent>
