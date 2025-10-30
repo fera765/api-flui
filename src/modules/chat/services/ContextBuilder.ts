@@ -73,7 +73,7 @@ export class ContextBuilder {
       name: agent.getName(),
       description: agent.getDescription(),
       prompt: agent.getPrompt(),
-      modelId: agent.getModel(),
+      modelId: agent.getDefaultModel(), // Fixed: Agent uses getDefaultModel() not getModel()
     };
   }
 }
