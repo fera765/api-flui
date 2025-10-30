@@ -1,6 +1,6 @@
 /**
- * NodeConfigModal - v3.0
- * Sistema inline de linkagem SUPERIOR
+ * NodeConfigModal - RECONSTRUÍDO DO ZERO
+ * Versão Simples e Funcional - Renderiza TODOS os campos do inputSchema
  */
 
 import { useState, useEffect } from 'react';
@@ -13,12 +13,15 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Settings, Save, X, AlertCircle, Info } from 'lucide-react';
-import { FieldRenderer } from '../FieldRenderer/FieldRenderer';
-import { AvailableOutput, LinkedField } from '../FieldRenderer/types';
+import { Save, X, AlertCircle, Info, Link2 } from 'lucide-react';
 
 interface NodeConfigModalProps {
   open: boolean;
@@ -27,10 +30,9 @@ interface NodeConfigModalProps {
   nodeName: string;
   config: Record<string, any>;
   inputSchema: any;
-  outputSchema: any;
-  linkedFields: Record<string, LinkedField>;
-  availableOutputs: AvailableOutput[];
-  onSave: (nodeId: string, config: Record<string, any>, linkedFields: Record<string, LinkedField>) => void;
+  linkedFields?: Record<string, any>;
+  availableOutputs?: any[];
+  onSave: (nodeId: string, config: Record<string, any>, linkedFields: Record<string, any>) => void;
 }
 
 export function NodeConfigModal({
@@ -41,19 +43,15 @@ export function NodeConfigModal({
   config: initialConfig,
   inputSchema,
   linkedFields: initialLinkedFields,
-  availableOutputs,
   onSave,
 }: NodeConfigModalProps) {
   const [config, setConfig] = useState<Record<string, any>>(initialConfig || {});
-  const [linkedFields, setLinkedFields] = useState<Record<string, LinkedField>>(initialLinkedFields || {});
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [linkedFields, setLinkedFields] = useState<Record<string, any>>(initialLinkedFields || {});
 
   useEffect(() => {
     if (open) {
-      console.log('🔧 Opening config modal:', { config: initialConfig, linkedFields: initialLinkedFields });
       setConfig(initialConfig || {});
       setLinkedFields(initialLinkedFields || {});
-      setErrors({});
     }
   }, [open, initialConfig, initialLinkedFields]);
 
@@ -61,182 +59,211 @@ export function NodeConfigModal({
   const required = inputSchema?.required || [];
   const hasFields = Object.keys(properties).length > 0;
 
-  const handleFieldChange = (key: string, value: any) => {
+  const handleChange = (key: string, value: any) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) {
-      setErrors((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-    }
-  };
-
-  const handleLink = (key: string, sourceNodeId: string, outputKey: string) => {
-    const sourceNode = availableOutputs.find((n) => n.nodeId === sourceNodeId);
-    const output = sourceNode?.outputs.find((o) => o.key === outputKey);
-
-    if (sourceNode && output) {
-      console.log('🔗 Linking field:', { key, sourceNodeId, outputKey });
-
-      setLinkedFields((prev) => ({
-        ...prev,
-        [key]: {
-          sourceNodeId,
-          sourceNodeName: sourceNode.nodeName,
-          outputKey,
-          outputType: output.type,
-        },
-      }));
-
-      // Remover valor estático
-      setConfig((prev) => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
-
-      // Limpar erro
-      if (errors[key]) {
-        setErrors((prev) => {
-          const next = { ...prev };
-          delete next[key];
-          return next;
-        });
-      }
-    }
-  };
-
-  const handleUnlink = (key: string) => {
-    console.log('🔓 Unlinking field:', key);
-    setLinkedFields((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  };
-
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    required.forEach((key: string) => {
-      const hasValue = config[key] !== undefined && config[key] !== '' && config[key] !== null;
-      const hasLink = linkedFields[key] !== undefined;
-
-      if (!hasValue && !hasLink) {
-        newErrors[key] = 'Campo obrigatório';
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handleSave = () => {
-    if (!validate()) {
-      return;
-    }
-
-    console.log('💾 Saving node config:', { config, linkedFields });
+    console.log('💾 Salvando config:', { nodeId, config, linkedFields });
     onSave(nodeId, config, linkedFields);
     onClose();
   };
 
-  const linkedCount = Object.keys(linkedFields).length;
-  const configCount = Object.keys(config).length;
-  const errorCount = Object.keys(errors).length;
+  const renderField = (key: string, schema: any) => {
+    const isRequired = required.includes(key);
+    const value = config[key];
+    const isLinked = linkedFields[key];
+
+    // Se campo está linkado, mostrar pill
+    if (isLinked) {
+      return (
+        <div key={key} className="space-y-2">
+          <Label className="flex items-center gap-2">
+            {schema.title || key}
+            {isRequired && <Badge variant="destructive" className="text-xs">Obrigatório</Badge>}
+          </Label>
+          <Card className="p-3 bg-primary/5 border-primary/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Link2 className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">Campo Linkado</span>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setLinkedFields((prev) => {
+                    const next = { ...prev };
+                    delete next[key];
+                    return next;
+                  });
+                }}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
+    // Campo normal (não linkado)
+    return (
+      <div key={key} className="space-y-2">
+        <Label htmlFor={key} className="flex items-center gap-2">
+          {schema.title || key}
+          {isRequired && <Badge variant="destructive" className="text-xs">*</Badge>}
+        </Label>
+
+        {/* Boolean → Switch */}
+        {schema.type === 'boolean' && (
+          <div className="flex items-center gap-2">
+            <Switch
+              id={key}
+              checked={value || false}
+              onCheckedChange={(checked) => handleChange(key, checked)}
+            />
+            <span className="text-sm text-muted-foreground">
+              {value ? 'Ativado' : 'Desativado'}
+            </span>
+          </div>
+        )}
+
+        {/* Enum → Select */}
+        {schema.enum && (
+          <Select value={value || ''} onValueChange={(v) => handleChange(key, v)}>
+            <SelectTrigger>
+              <SelectValue placeholder={`Selecione ${schema.title || key}`} />
+            </SelectTrigger>
+            <SelectContent>
+              {schema.enum.map((option: string) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {/* Number → Input type number */}
+        {(schema.type === 'number' || schema.type === 'integer') && !schema.enum && (
+          <Input
+            id={key}
+            type="number"
+            value={value || ''}
+            onChange={(e) => handleChange(key, Number(e.target.value))}
+            placeholder={schema.description}
+          />
+        )}
+
+        {/* String (longo) → Textarea */}
+        {schema.type === 'string' && !schema.enum && schema.description?.length > 50 && (
+          <Textarea
+            id={key}
+            value={value || ''}
+            onChange={(e) => handleChange(key, e.target.value)}
+            placeholder={schema.description}
+            rows={4}
+          />
+        )}
+
+        {/* String (curto) → Input */}
+        {schema.type === 'string' && !schema.enum && (!schema.description || schema.description.length <= 50) && (
+          <Input
+            id={key}
+            type="text"
+            value={value || ''}
+            onChange={(e) => handleChange(key, e.target.value)}
+            placeholder={schema.description}
+            readOnly={schema.readOnly}
+          />
+        )}
+
+        {/* Object → JSON Input */}
+        {schema.type === 'object' && (
+          <Textarea
+            id={key}
+            value={value ? JSON.stringify(value, null, 2) : ''}
+            onChange={(e) => {
+              try {
+                const parsed = JSON.parse(e.target.value);
+                handleChange(key, parsed);
+              } catch {
+                // Ignore JSON parse errors while typing
+              }
+            }}
+            placeholder={`{"key": "value"}`}
+            rows={6}
+            className="font-mono text-xs"
+          />
+        )}
+
+        {/* Array → JSON Input */}
+        {schema.type === 'array' && (
+          <Textarea
+            id={key}
+            value={value ? JSON.stringify(value, null, 2) : ''}
+            onChange={(e) => {
+              try {
+                const parsed = JSON.parse(e.target.value);
+                handleChange(key, parsed);
+              } catch {
+                // Ignore JSON parse errors while typing
+              }
+            }}
+            placeholder={`["item1", "item2"]`}
+            rows={4}
+            className="font-mono text-xs"
+          />
+        )}
+
+        {schema.description && (
+          <p className="text-xs text-muted-foreground">{schema.description}</p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
             <div className="p-2 bg-primary/10 rounded-lg">
-              <Settings className="w-6 h-6 text-primary" />
+              <Save className="w-5 h-5 text-primary" />
             </div>
             Configurar: {nodeName}
           </DialogTitle>
-          <DialogDescription className="flex items-center gap-4 text-sm">
-            <span>Configure os parâmetros deste node</span>
-            {linkedCount > 0 && (
-              <Badge variant="secondary" className="gap-1">
-                🔗 {linkedCount} linkado(s)
-              </Badge>
-            )}
+          <DialogDescription>
+            Configure os parâmetros necessários para este node
           </DialogDescription>
         </DialogHeader>
 
-        {/* Content (scrollable) */}
         <div className="flex-1 overflow-y-auto px-1">
           {!hasFields ? (
-            <Card className="border-2 border-dashed">
-              <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="p-4 bg-muted rounded-full mb-4">
-                  <Info className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">Nenhum parâmetro configurável</h3>
-                <p className="text-sm text-muted-foreground">
-                  Este node não possui campos que precisam ser configurados
-                </p>
-              </CardContent>
-            </Card>
+            <Alert>
+              <Info className="w-4 h-4" />
+              <AlertDescription>
+                Este node não possui parâmetros configuráveis
+              </AlertDescription>
+            </Alert>
           ) : (
-            <div className="space-y-6 py-2">
-              {Object.entries(properties).map(([key, schema]: [string, any]) => {
-                const isRequired = required.includes(key);
-                const isLinked = !!linkedFields[key];
-                const error = errors[key];
-
-                return (
-                  <FieldRenderer
-                    key={key}
-                    fieldKey={key}
-                    schema={schema}
-                    value={config[key]}
-                    isLinked={isLinked}
-                    linkedField={linkedFields[key]}
-                    isRequired={isRequired}
-                    error={error}
-                    availableOutputs={availableOutputs}
-                    onChange={(value) => handleFieldChange(key, value)}
-                    onLink={(sourceNodeId, outputKey) => handleLink(key, sourceNodeId, outputKey)}
-                    onUnlink={() => handleUnlink(key)}
-                  />
-                );
-              })}
+            <div className="space-y-4 py-2">
+              {Object.entries(properties).map(([key, schema]: [string, any]) =>
+                renderField(key, schema)
+              )}
             </div>
           )}
         </div>
 
-        {/* Avisos */}
-        {errorCount > 0 && (
-          <Alert variant="destructive">
-            <AlertCircle className="w-4 h-4" />
-            <AlertDescription>
-              <strong>{errorCount}</strong> campo(s) obrigatório(s) não preenchido(s)
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {linkedCount > 0 && errorCount === 0 && (
-          <Alert className="border-primary/30 bg-primary/5">
-            <Info className="w-4 h-4 text-primary" />
-            <AlertDescription>
-              ✅ <strong>{linkedCount}</strong> campo(s) linkado(s). Os dados fluirão automaticamente.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Footer */}
         <DialogFooter className="gap-2">
           <Button type="button" variant="outline" onClick={onClose}>
             <X className="w-4 h-4 mr-2" />
             Cancelar
           </Button>
-          <Button type="button" onClick={handleSave} disabled={errorCount > 0}>
+          <Button type="button" onClick={handleSave}>
             <Save className="w-4 h-4 mr-2" />
-            Salvar ({configCount} config, {linkedCount} links)
+            Salvar
           </Button>
         </DialogFooter>
       </DialogContent>
