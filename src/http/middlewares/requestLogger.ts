@@ -24,7 +24,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
   const originalJson = res.json.bind(res);
 
   // Override json to log response
-  res.json = function(body: any): Response {
+  res.json = function(body: unknown): Response {
     const duration = Date.now() - startTime;
     
     console.log('─'.repeat(80));
@@ -33,13 +33,13 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
     console.log('📊 Status:', res.statusCode);
     console.log('📦 Response Body:', JSON.stringify(body, null, 2));
     console.log('='.repeat(80) + '\n');
-
+    
     return originalJson(body);
   };
-
+  
   // Capture original send method for non-JSON responses
   const originalSend = res.send.bind(res);
-  res.send = function(body: any): Response {
+  res.send = function(body: unknown): Response {
     const duration = Date.now() - startTime;
     
     // Only log if not already logged by json()

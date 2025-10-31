@@ -1,21 +1,39 @@
 import { randomUUID } from 'crypto';
 import { SystemTool, ToolType } from '../../domain/SystemTool';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { executeInSandbox, SandboxOptions } from './SafeShellSandbox';
 
-const execAsync = promisify(exec);
+export interface ShellToolInput {
+  command: string;
+  cwd?: string;
+  timeout?: number;
+  maxOutputSize?: number;
+}
 
 export function createShellTool(): SystemTool {
   return new SystemTool({
     id: randomUUID(),
     name: 'Shell',
-    description: 'Executes shell commands on the system',
+    description: 'Executes shell commands in a safe sandbox environment. Only allows safe commands and restricts execution to current directory and subdirectories.',
     type: ToolType.ACTION,
     inputSchema: {
       type: 'object',
       properties: {
-        command: { type: 'string' },
-        cwd: { type: 'string' },
+        command: { 
+          type: 'string',
+          description: 'Shell command to execute (must be in whitelist and within allowed directories)'
+        },
+        cwd: { 
+          type: 'string',
+          description: 'Working directory (default: current directory). Must be within allowed scope.'
+        },
+        timeout: {
+          type: 'number',
+          description: 'Timeout in milliseconds (default: 30000)'
+        },
+        maxOutputSize: {
+          type: 'number',
+          description: 'Maximum output size in bytes (default: 10485760 = 10MB)'
+        },
       },
       required: ['command'],
     },
@@ -25,29 +43,35 @@ export function createShellTool(): SystemTool {
         stdout: { type: 'string' },
         stderr: { type: 'string' },
         exitCode: { type: 'number' },
+        success: { type: 'boolean' },
       },
     },
     executor: async (input: unknown) => {
-      const { command, cwd } = input as {
-        command: string;
-        cwd?: string;
-      };
-
-      try {
-        const { stdout, stderr } = await execAsync(command, { cwd });
+      const shellInput = input as ShellToolInput;
+      
+      if (!shellInput.command || typeof shellInput.command !== 'string') {
         return {
-          stdout,
-          stderr,
-          exitCode: 0,
-        };
-      } catch (error: unknown) {
-        const err = error as { stdout?: string; stderr?: string; code?: number };
-        return {
-          stdout: err.stdout || '',
-          stderr: err.stderr || '',
-          exitCode: err.code || 1,
+          stdout: '',
+          stderr: 'Command is required and must be a string',
+          exitCode: 1,
+          success: false,
         };
       }
+
+      const options: SandboxOptions = {
+        cwd: shellInput.cwd,
+        timeout: shellInput.timeout,
+        maxOutputSize: shellInput.maxOutputSize,
+      };
+
+      const result = await executeInSandbox(shellInput.command, options);
+      
+      return {
+        stdout: result.stdout,
+        stderr: result.stderr,
+        exitCode: result.exitCode,
+        success: result.success,
+      };
     },
   });
 }

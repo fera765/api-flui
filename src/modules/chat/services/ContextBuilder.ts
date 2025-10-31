@@ -4,6 +4,8 @@ import { IExecutionLogRepository } from '@modules/core/repositories/IExecutionLo
 import { ISystemToolRepository } from '@modules/core/repositories/ISystemToolRepository';
 import { IAgentRepository } from '@modules/core/repositories/IAgentRepository';
 import { Automation } from '@modules/core/domain/Automation';
+import { SystemTool } from '@modules/core/domain/SystemTool';
+import { Agent } from '@modules/core/domain/Agent';
 import { AppError } from '@shared/errors';
 
 export class ContextBuilder {
@@ -56,7 +58,7 @@ export class ContextBuilder {
     };
   }
 
-  private buildToolSummary(tool: any): ToolSummary {
+  private buildToolSummary(tool: SystemTool): ToolSummary {
     return {
       id: tool.getId(),
       name: tool.getName(),
@@ -67,7 +69,7 @@ export class ContextBuilder {
     };
   }
 
-  private buildAgentSummary(agent: any): AgentSummary {
+  private buildAgentSummary(agent: Agent): AgentSummary {
     return {
       id: agent.getId(),
       name: agent.getName(),
