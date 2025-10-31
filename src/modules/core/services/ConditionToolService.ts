@@ -25,7 +25,7 @@ export interface UpdateConditionToolDTO {
 }
 
 export interface EvaluateConditionDTO {
-  input: any;
+  input: Record<string, unknown>;
   evaluateAll?: boolean; // If true, returns all satisfied conditions
 }
 

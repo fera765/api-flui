@@ -4,12 +4,49 @@ import { IAutomationRepository } from '../repositories/IAutomationRepository';
 import { IAgentRepository } from '../repositories/IAgentRepository';
 import { ISystemToolRepository } from '../repositories/ISystemToolRepository';
 import { IMCPRepository } from '../repositories/IMCPRepository';
-import { Automation } from '../domain/Automation';
+import { Automation, NodeProps, LinkProps } from '../domain/Automation';
 import { Agent } from '../domain/Agent';
 import { SystemTool } from '../domain/SystemTool';
 import { MCP } from '../domain/MCP';
 import { AppError } from '@shared/errors';
 import { ExportValidator } from '@shared/utils/exportValidator';
+
+// Interfaces for import data structures
+interface AutomationImportData {
+  name: string;
+  description?: string;
+  nodes?: NodeProps[];
+  links?: LinkProps[];
+  trigger?: unknown;
+  actions?: unknown[];
+}
+
+interface ActionData {
+  agentId?: string;
+  toolId?: string;
+  [key: string]: unknown;
+}
+
+interface AutomationDataWithActions {
+  name: string;
+  description?: string;
+  trigger?: {
+    config?: {
+      toolId?: string;
+      [key: string]: unknown;
+    };
+    [key: string]: unknown;
+  };
+  actions?: ActionData[];
+  nodes?: NodeProps[];
+  links?: LinkProps[];
+}
+
+interface DependencyImportData {
+  agents?: Array<{ id: string; name: string; [key: string]: unknown }>;
+  tools?: Array<{ id: string; name: string; [key: string]: unknown }>;
+  mcps?: Array<{ id: string; name: string; [key: string]: unknown }>;
+}
 
 export interface ExportAllResult {
   automations: AutomationExportResponse[];
@@ -186,11 +223,12 @@ export class ImportExportService {
       } else {
         // Create new via repository
         // Use nodes/links if available, otherwise use empty
+        const automationImportData = automationData as AutomationImportData;
         automation = await this.automationRepository.create({
           name: automationData.name,
           description: automationData.description,
-          nodes: (automationData as any).nodes || [],
-          links: (automationData as any).links || [],
+          nodes: automationImportData.nodes || [],
+          links: automationImportData.links || [],
         });
       }
 
@@ -270,7 +308,7 @@ export class ImportExportService {
   /**
    * Import dependencies and return ID mappings
    */
-  private async importDependencies(dependencies: any, options: ImportOptions): Promise<Record<string, string>> {
+  private async importDependencies(dependencies: DependencyImportData, options: ImportOptions): Promise<Record<string, string>> {
     const mappedIds: Record<string, string> = {};
 
     if (options.skipDependencies) {
@@ -288,10 +326,10 @@ export class ImportExportService {
         if (!existingAgent || !options.preserveIds) {
           // Create new via repository
           const agent = await this.agentRepository.create({
-            name: agentData.name,
-            prompt: agentData.prompt,
-            description: agentData.description,
-            defaultModel: agentData.defaultModel,
+            name: String(agentData.name),
+            prompt: String(agentData.prompt || ''),
+            description: agentData.description ? String(agentData.description) : undefined,
+            defaultModel: agentData.defaultModel ? String(agentData.defaultModel) : undefined,
             tools: [],
           });
           mappedIds[oldId] = agent.getId();
@@ -359,12 +397,12 @@ export class ImportExportService {
   /**
    * Remap IDs in automation data
    */
-  private remapAutomationIds(automationData: any, mappedIds: Record<string, string>): any {
-    const remapped = JSON.parse(JSON.stringify(automationData));
+  private remapAutomationIds(automationData: AutomationDataWithActions, mappedIds: Record<string, string>): AutomationDataWithActions {
+    const remapped = JSON.parse(JSON.stringify(automationData)) as AutomationDataWithActions;
 
     // Remap action IDs
     if (Array.isArray(remapped.actions)) {
-      remapped.actions = remapped.actions.map((action: any) => {
+      remapped.actions = remapped.actions.map((action: ActionData) => {
         if (action.agentId && mappedIds[action.agentId]) {
           action.agentId = mappedIds[action.agentId];
         }
